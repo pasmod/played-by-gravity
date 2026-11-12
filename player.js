@@ -27,15 +27,27 @@ document.querySelectorAll(".n-score").forEach((el) => (el.textContent = S.n_scor
 document.querySelectorAll(".n-drop").forEach((el) => (el.textContent = `${drop} m`));
 
 // ---------------------------------------------------------------- sound
-const audioData = fetch("shur.m4a").then((r) => {
-  if (!r.ok) throw new Error("sound file missing");
-  return r.arrayBuffer();
-});
+// Two computed instruments play the same collisions: a setar (plucked) and a santur (struck).
+const SOUNDS = { setar: "setar.m4a", santur: "santur.m4a" };
+let inst = new URLSearchParams(location.search).get("sound") === "santur" ? "santur" : "setar";
+const sounds = {};
+function sound(name) {
+  if (!sounds[name]) {
+    sounds[name] = {
+      buffer: null,
+      calib: 0,
+      data: fetch(SOUNDS[name]).then((r) => {
+        if (!r.ok) throw new Error("sound file missing");
+        return r.arrayBuffer();
+      }),
+    };
+  }
+  return sounds[name];
+}
+sound(inst);
 let ctx = null;
 let gain = null;
-let buffer = null;
 let source = null;
-let calib = 0;
 
 // Compressed sound can start a few milliseconds late or early, depending on the browser.
 // The first strike of the piece is at T0, so the decoded sound is measured against it.
@@ -63,12 +75,14 @@ async function ensureAudio() {
     gain.connect(ctx.destination);
   }
   if (ctx.state !== "running") ctx.resume();       // inside the click, as phones require
-  if (!buffer) {
-    const data = await audioData;
-    buffer = await new Promise((res, rej) => ctx.decodeAudioData(data.slice(0), res, rej));
-    calib = findOffset(buffer);
+  const snd = sound(inst);
+  if (!snd.buffer) {
+    const data = await snd.data;
+    snd.buffer = await new Promise((res, rej) => ctx.decodeAudioData(data.slice(0), res, rej));
+    snd.calib = findOffset(snd.buffer);
   }
   if (ctx.state !== "running") await ctx.resume();
+  return snd;
 }
 
 // ---------------------------------------------------------------- time
@@ -99,9 +113,10 @@ function stopSource() {
 let token = 0;
 async function play(from) {
   const mine = ++token;
+  let snd = null;
   if (!silent) {
     try {
-      await ensureAudio();
+      snd = await ensureAudio();
     } catch (err) {
       console.error(err);
       silent = true;
@@ -117,10 +132,10 @@ async function play(from) {
     return;
   }
   source = ctx.createBufferSource();
-  source.buffer = buffer;
+  source.buffer = snd.buffer;
   source.connect(gain);
   const when = ctx.currentTime + 0.08;
-  source.start(when, Math.max(0, from + calib));
+  source.start(when, Math.max(0, from + snd.calib));
   ctxStart = when;
   tStart = from;
   playing = true;
@@ -157,7 +172,7 @@ const fmt = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(
 
 async function begin(from) {
   const label = playBig.querySelector("span");
-  if (!buffer) label.textContent = "LOADING";
+  if (!sound(inst).buffer) label.textContent = "LOADING";
   await play(from);
   if (!started) {
     started = true;
@@ -170,6 +185,28 @@ async function begin(from) {
 playBig.addEventListener("click", () => begin(START_AT));
 again.addEventListener("click", () => begin(START_AT));
 toggle.addEventListener("click", () => (playing ? pause() : begin(tPaused)));
+
+// the instrument switch: the picture stays, only the computed sound changes
+const instBtns = { setar: $("inst-setar"), santur: $("inst-santur") };
+function showInst() {
+  for (const [name, el] of Object.entries(instBtns)) el.setAttribute("aria-pressed", String(name === inst));
+}
+showInst();
+for (const [name, el] of Object.entries(instBtns)) {
+  el.addEventListener("click", async () => {
+    if (name === inst) return;
+    inst = name;
+    showInst();
+    if (!playing || silent) return;
+    try {
+      await ensureAudio();           // the old sound keeps playing while the new one loads
+    } catch (err) {
+      console.error(err);
+      return;
+    }
+    if (playing && inst === name) begin(now());
+  });
+}
 
 let resumeAfterScrub = false;
 let scrubbing = false;
