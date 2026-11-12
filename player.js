@@ -1,5 +1,6 @@
-// Shur in g — the player: sound, time and controls.
-// The picture (app.js) is drawn from the time alone; the time is the clock of the sound.
+// Shur in g — the app: live sound, time, gestures and controls.
+// Nothing here is a recording of the piece. The picture (app.js) is drawn from the time alone, and
+// every note is triggered at the moment of its collision from a bank of single notes.
 const $ = (id) => document.getElementById(id);
 
 let app;
@@ -7,17 +8,17 @@ try {
   app = await import("./app.js");
 } catch (err) {
   $("fail").style.display = "grid";
-  $("card-title").style.display = "none";
-  $("more").style.display = "none";
+  $("home").style.display = "none";
   throw err;
 }
-const { renderAt, resize, view, S, T_LAST, T_REL, THEME, quality } = app;
+const { renderAt, resize, view, rigAt, pick, S, T_LAST, T_REL, THEME, quality } = app;
 document.documentElement.dataset.look = THEME;
 
+const NOTES = window.NOTES || {};
 const DUR = S.t_end;
-const T0 = S.t0;
-const START_AT = 0.9;          // where "play" begins: just before the title fades
-const IDLE_AT = 2.2;           // the still picture behind the title before anyone presses play
+const START_AT = T_REL - 0.7;      // "drop" begins just before the balls are let go
+const IDLE_AT = T_REL - 0.9;       // the waiting picture behind the start screen
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 
 // ---------------------------------------------------------------- facts in the text
 const ys = S.pads.map((p) => p.c[1]);
@@ -26,254 +27,475 @@ document.querySelectorAll(".n-hits").forEach((el) => (el.textContent = S.hits.le
 document.querySelectorAll(".n-score").forEach((el) => (el.textContent = S.n_score));
 document.querySelectorAll(".n-drop").forEach((el) => (el.textContent = `${drop} m`));
 
-// ---------------------------------------------------------------- sound
-// Two computed instruments play the same collisions: a setar (plucked) and a santur (struck).
-const SOUNDS = { setar: "setar.m4a", santur: "santur.m4a" };
-let inst = new URLSearchParams(location.search).get("sound") === "santur" ? "santur" : "setar";
-const sounds = {};
-function sound(name) {
-  if (!sounds[name]) {
-    sounds[name] = {
+// ---------------------------------------------------------------- the sound: one note per collision
+const FILES = { setar: "snd/setar.m4a", santur: "snd/santur.m4a" };
+const CUT = { setar: [1800, 3200, 6000, 20000], santur: [2200, 4200, 8000, 20000] };   // softer strokes are darker
+const insts = Object.keys(FILES).filter((k) => NOTES[k]);
+const asked = new URLSearchParams(location.search).get("sound");
+let inst = insts.includes(asked) ? asked : insts.includes("setar") ? "setar" : insts[0];
+const banks = {};
+function bank(name) {
+  if (!banks[name]) {
+    banks[name] = {
       buffer: null,
       calib: 0,
-      data: fetch(SOUNDS[name]).then((r) => {
-        if (!r.ok) throw new Error("sound file missing");
+      conv: null,
+      data: fetch(FILES[name]).then((r) => {
+        if (!r.ok) throw new Error("sound bank missing");
         return r.arrayBuffer();
       }),
     };
   }
-  return sounds[name];
+  return banks[name];
 }
-sound(inst);
+if (inst) bank(inst);
 let ctx = null;
-let gain = null;
-let source = null;
+let master = null;
+let silent = !inst;
 
-// Compressed sound can start a few milliseconds late or early, depending on the browser.
-// The first strike of the piece is at T0, so the decoded sound is measured against it.
-function findOffset(buf) {
-  const sr = buf.sampleRate;
+function unlock() {
+  if (silent) return;
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const guard = ctx.createDynamicsCompressor();     // only catches the rare pile-up of loud notes
+    guard.threshold.value = -8;
+    guard.knee.value = 6;
+    guard.ratio.value = 8;
+    guard.attack.value = 0.003;
+    guard.release.value = 0.2;
+    master = ctx.createGain();
+    master.connect(guard);
+    guard.connect(ctx.destination);
+  }
+  if (ctx.state !== "running") ctx.resume();
+}
+function room(seconds) {
+  // a small computed room: decaying noise, a little different left and right
+  const n = Math.floor(seconds * ctx.sampleRate);
+  const buf = ctx.createBuffer(2, n, ctx.sampleRate);
+  let seed = 20261112;
+  const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296) * 2 - 1;
+  for (let c = 0; c < 2; c++) {
+    const d = buf.getChannelData(c);
+    let low = 0;
+    for (let i = 0; i < n; i++) {
+      const t = i / ctx.sampleRate;
+      low += 0.35 * (rnd() - low);                     // darker tail
+      d[i] = low * Math.exp((-6.9 * t) / seconds) * (1 - Math.exp(-t / 0.008));
+    }
+  }
+  return buf;
+}
+// Compressed sound can start a few milliseconds off, depending on the browser. The first note of the
+// bank starts at zero, so the decoded sound is measured against that.
+function offsetOf(buf) {
   const d = buf.getChannelData(0);
-  const i0 = Math.max(0, Math.floor((T0 - 0.2) * sr));
-  const i1 = Math.min(d.length, Math.floor((T0 + 0.3) * sr));
+  const n = Math.min(d.length, Math.floor(0.4 * buf.sampleRate));
   let peak = 0;
-  for (let i = i0; i < i1; i++) peak = Math.max(peak, Math.abs(d[i]));
+  for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(d[i]));
   if (peak < 1e-4) return 0;
-  for (let i = i0; i < i1; i++) {
+  for (let i = 0; i < n; i++) {
     if (Math.abs(d[i]) > 0.06 * peak) {
-      const off = i / sr - (T0 + 0.0006);
-      return Math.abs(off) < 0.15 ? off : 0;
+      const off = i / buf.sampleRate - 0.0007;
+      return off > -0.01 && off < 0.09 ? off : 0;
     }
   }
   return 0;
 }
-
-async function ensureAudio() {
-  if (!ctx) {
-    ctx = new (window.AudioContext || window.webkitAudioContext)();
-    gain = ctx.createGain();
-    gain.connect(ctx.destination);
-  }
-  if (ctx.state !== "running") ctx.resume();       // inside the click, as phones require
-  const snd = sound(inst);
-  if (!snd.buffer) {
-    const data = await snd.data;
-    snd.buffer = await new Promise((res, rej) => ctx.decodeAudioData(data.slice(0), res, rej));
-    snd.calib = findOffset(snd.buffer);
+async function ready(name) {
+  unlock();
+  const b = bank(name);
+  if (!b.buffer) {
+    const data = await b.data;
+    b.buffer = await new Promise((res, rej) => ctx.decodeAudioData(data.slice(0), res, rej));
+    b.calib = offsetOf(b.buffer);
+    b.conv = ctx.createConvolver();
+    b.conv.buffer = room(NOTES[name].room);
+    const wet = ctx.createGain();
+    wet.gain.value = NOTES[name].wet;
+    b.conv.connect(wet);
+    wet.connect(master);
   }
   if (ctx.state !== "running") await ctx.resume();
-  return snd;
+  return b;
 }
-
-// ---------------------------------------------------------------- time
-let playing = false;
-let started = false;
-let silent = false;            // if the sound cannot be decoded, the piece still plays, on a plain clock
-let wallStart = 0;
-let tPaused = IDLE_AT;
-let tStart = 0;
-let ctxStart = 0;
-
-const latency = () => (ctx ? ctx.outputLatency || ctx.baseLatency || 0 : 0);
-function now() {
-  if (!playing) return tPaused;
-  const run = silent ? performance.now() / 1000 - wallStart : Math.max(0, ctx.currentTime - ctxStart - latency());
-  return Math.min(DUR, tStart + run);
-}
-function stopSource() {
-  if (!source) return;
+const live = new Set();
+let strings = {};
+const stat = { struck: 0 };          // for checks from the console: how many notes have been triggered
+window.shurStat = () => ({ ...stat, audio: ctx ? ctx.state : "none", instrument: inst, speed, offset: banks[inst] ? banks[inst].calib : null });
+function hush(node, when) {
+  const t = Math.max(when, ctx.currentTime);
+  node.g.gain.cancelScheduledValues(t);
+  node.g.gain.setValueAtTime(node.level, t);
+  node.g.gain.linearRampToValueAtTime(0, t + 0.028);
   try {
-    source.stop();
+    node.src.stop(t + 0.04);
   } catch (e) {
     /* already stopped */
   }
-  source.disconnect();
-  source = null;
+}
+function hushAll() {
+  if (!ctx) return;
+  for (const n of live) hush(n, ctx.currentTime);
+  strings = {};
+}
+// one note: slot of the bank, when, how loud, how dark, and on which string (-1: it just rings on)
+function strike(name, slot, when, amp, bucket, string) {
+  const b = banks[name];
+  if (!b || !b.buffer) return;
+  const info = NOTES[name];
+  const src = ctx.createBufferSource();
+  src.buffer = b.buffer;
+  const lp = ctx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = CUT[name][bucket];
+  lp.Q.value = 0.5;
+  const g = ctx.createGain();
+  const node = { src, g, level: amp * info.gain };
+  g.gain.value = node.level;
+  src.connect(lp);
+  lp.connect(g);
+  g.connect(master);
+  g.connect(b.conv);
+  src.start(when, Math.max(0, slot * info.slot + b.calib), info.slot - 0.06);
+  stat.struck++;
+  live.add(node);
+  src.onended = () => {
+    live.delete(node);
+    g.disconnect();
+  };
+  if (string !== -1) {              // the next note on a string stops the one before it
+    const key = `${name}:${string}`;
+    if (strings[key]) hush(strings[key], when);
+    strings[key] = node;
+  }
+}
+
+// ---------------------------------------------------------------- time
+let speed = 1;
+let playing = false;
+let started = false;
+let tPaused = IDLE_AT;
+let tBase = 0;
+let cBase = 0;
+let ptr = 0;
+const clock = () => (ctx && !silent ? ctx.currentTime : performance.now() / 1000);
+const latency = () => (ctx && !silent ? ctx.outputLatency || ctx.baseLatency || 0 : 0);
+const filmNow = () => (playing ? Math.min(DUR, tBase + Math.max(0, clock() - cBase) * speed) : tPaused);
+// what the eye should see now: the sound leaves the speakers a little late
+const seen = () => (playing ? Math.max(tBase, filmNow() - latency() * speed) : tPaused);
+function lower(plan, t) {
+  let lo = 0;
+  let hi = plan.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (plan[mid][0] < t) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
 }
 let token = 0;
-async function play(from) {
+async function start(from) {
   const mine = ++token;
-  let snd = null;
   if (!silent) {
     try {
-      snd = await ensureAudio();
+      await ready(inst);
     } catch (err) {
       console.error(err);
       silent = true;
     }
   }
   if (mine !== token) return;
-  stopSource();
+  hushAll();
   if (from >= DUR - 0.05) from = START_AT;
-  if (silent) {
-    wallStart = performance.now() / 1000;
-    tStart = from;
-    playing = true;
-    return;
-  }
-  source = ctx.createBufferSource();
-  source.buffer = snd.buffer;
-  source.connect(gain);
-  const when = ctx.currentTime + 0.08;
-  source.start(when, Math.max(0, from + snd.calib));
-  ctxStart = when;
-  tStart = from;
+  tBase = from;
+  cBase = clock() + 0.06;
+  ptr = silent ? 0 : lower(NOTES[inst].plan, from);
   playing = true;
 }
 function pause() {
   token++;
-  tPaused = now();
-  stopSource();
+  tPaused = filmNow();
   playing = false;
+  hushAll();
+}
+function schedule() {
+  if (!playing || silent || !ctx) return;
+  const plan = NOTES[inst].plan;
+  if (!banks[inst] || !banks[inst].buffer) return;
+  const horizon = filmNow() + 0.14 * speed;
+  while (ptr < plan.length && plan[ptr][0] <= horizon) {
+    const n = plan[ptr++];
+    const when = cBase + (n[0] - tBase) / speed;
+    if (when > ctx.currentTime - 0.03) strike(inst, n[2], Math.max(when, ctx.currentTime), n[3], n[4], n[1]);
+  }
+}
+async function touchNote(lane) {
+  if (silent) return;
+  try {
+    await ready(inst);
+  } catch (err) {
+    console.error(err);
+    return;
+  }
+  strike(inst, lane, ctx.currentTime + 0.01, 0.95, 3, "touch");
 }
 
 // ---------------------------------------------------------------- controls
 const body = document.body;
-const playBig = $("play-big");
-const toggle = $("toggle");
-const togglePath = $("toggle-path");
-const scrub = $("scrub");
-const fill = $("fill");
-const timeEl = $("time");
-const hint = $("hint");
-const again = $("again");
-const wrap = $("stage-wrap");
 const canvas = $("stage");
-scrub.max = String(DUR);
-for (const s of S.sections.slice(1)) {
-  const tick = document.createElement("span");
-  tick.className = "tick";
-  tick.style.left = `${(s.t / DUR) * 100}%`;
-  $("scrub-wrap").insertBefore(tick, scrub);
+const toast = $("toast");
+let toastTimer = 0;
+function say(text, ms = 4600) {
+  toast.textContent = text;
+  toast.style.opacity = "1";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (toast.style.opacity = "0"), ms);
 }
-const PATH_PAUSE = "M1 0h3v10H1zM6 0h3v10H6z";
-const PATH_PLAY = "M1 0l9 5-9 5z";
-const fmt = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
 
-async function begin(from) {
-  const label = playBig.querySelector("span");
-  if (!sound(inst).buffer) label.textContent = "LOADING";
-  await play(from);
-  if (!started) {
-    started = true;
-    body.classList.add("started");
-    hint.textContent = silent ? "The sound could not be loaded. Drag to look around" : hint.textContent;
-    hint.style.opacity = "1";
-    setTimeout(() => (hint.style.opacity = "0"), 5200);
-  }
-}
-playBig.addEventListener("click", () => begin(START_AT));
-again.addEventListener("click", () => begin(START_AT));
-toggle.addEventListener("click", () => (playing ? pause() : begin(tPaused)));
-
-// the instrument switch: the picture stays, only the computed sound changes
-const instBtns = { setar: $("inst-setar"), santur: $("inst-santur") };
+// instrument
+const instBtns = [...document.querySelectorAll("[data-inst]")];
 function showInst() {
-  for (const [name, el] of Object.entries(instBtns)) el.setAttribute("aria-pressed", String(name === inst));
+  for (const el of instBtns) {
+    el.style.display = insts.includes(el.dataset.inst) ? "" : "none";
+    el.setAttribute("aria-pressed", String(el.dataset.inst === inst));
+  }
+  const hasSetar = insts.includes("setar");
+  $("about-setar").style.display = hasSetar ? "" : "none";
+  $("credit-setar").style.display = hasSetar ? "" : "none";
 }
 showInst();
-for (const [name, el] of Object.entries(instBtns)) {
+for (const el of instBtns) {
   el.addEventListener("click", async () => {
+    const name = el.dataset.inst;
     if (name === inst) return;
     inst = name;
+    bank(inst);
     showInst();
-    if (!playing || silent) return;
+    if (!started || silent) return;
     try {
-      await ensureAudio();           // the old sound keeps playing while the new one loads
+      await ready(inst);            // the old instrument keeps playing while the new one loads
     } catch (err) {
       console.error(err);
       return;
     }
-    if (playing && inst === name) begin(now());
+    if (playing && inst === name) {
+      hushAll();
+      ptr = lower(NOTES[inst].plan, filmNow());
+    }
   });
 }
 
-let resumeAfterScrub = false;
-let scrubbing = false;
-scrub.addEventListener("input", () => {
-  if (!scrubbing) {
-    scrubbing = true;
-    resumeAfterScrub = playing;
-    if (playing) pause();
+// drop, again, play and pause
+const dropBtn = $("drop");
+async function begin(from) {
+  if (!started) dropBtn.textContent = "ONE MOMENT";
+  dropBtn.disabled = true;
+  await start(from);
+  dropBtn.disabled = false;
+  if (!started) {
+    started = true;
+    body.classList.add("started");
+    say(silent ? "The sound could not be loaded. Drag to look around." : "Drag to look around. Tap a tile to play it.");
   }
-  tPaused = Number(scrub.value);
+}
+dropBtn.addEventListener("click", () => begin(START_AT));
+$("again").addEventListener("click", () => {
+  follow();
+  begin(START_AT);
 });
-scrub.addEventListener("change", () => {
-  scrubbing = false;
-  tPaused = Number(scrub.value);
-  if (resumeAfterScrub) begin(tPaused);
+const togglePath = $("toggle-path");
+$("toggle").addEventListener("click", () => (playing ? pause() : begin(tPaused)));
+
+// speed: slower without changing the pitch, because the notes are triggered one by one
+const speedBtn = $("speed");
+const SPEEDS = [1, 0.5, 0.25];
+speedBtn.addEventListener("click", () => {
+  const t = filmNow();
+  speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length];
+  tBase = t;
+  cBase = clock();
+  speedBtn.textContent = speed === 1 ? "1×" : speed === 0.5 ? "½×" : "¼×";
+  speedBtn.setAttribute("aria-pressed", String(speed !== 1));
 });
 
-const fullBtn = $("full");
-if (!wrap.requestFullscreen) fullBtn.style.display = "none";
-fullBtn.addEventListener("click", () => {
-  if (document.fullscreenElement) document.exitFullscreen();
-  else wrap.requestFullscreen().catch(() => {});
+// camera: it follows the balls on its own course until the visitor takes over
+const camBtn = $("cam");
+function showCam() {
+  camBtn.textContent = view.free ? "FREE VIEW" : "FOLLOW";
+  camBtn.setAttribute("aria-pressed", String(!view.free));
+}
+function takeOver() {
+  if (view.free) return;
+  const r = rigAt(seen());
+  view.az = r.az + view.az + view.sway;
+  view.el = clamp(r.el + view.el, -25, 84);
+  view.sway = 0;
+  view.free = true;
+  showCam();
+}
+function follow() {
+  view.free = false;
+  view.az = 0;
+  view.el = 0;
+  view.zoom = 1;
+  showCam();
+}
+camBtn.addEventListener("click", () => (view.free ? follow() : takeOver()));
+
+// gestures on the picture: drag to turn, pinch or wheel to come closer, tap a tile to play it
+const fingers = new Map();
+let downAt = 0;
+let moved = 0;
+let last = null;
+let pinch0 = 0;
+let zoom0 = 1;
+const spread = () => {
+  const [a, b] = [...fingers.values()];
+  return Math.hypot(a.x - b.x, a.y - b.y);
+};
+canvas.addEventListener("pointerdown", (e) => {
+  try {
+    canvas.setPointerCapture(e.pointerId);
+  } catch (err) {
+    /* a synthetic pointer cannot be captured */
+  }
+  fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (fingers.size === 1) {
+    downAt = performance.now();
+    moved = 0;
+    last = { x: e.clientX, y: e.clientY };
+  } else if (fingers.size === 2) {
+    pinch0 = spread();
+    zoom0 = view.zoom;
+    moved = 99;
+  }
 });
+canvas.addEventListener("pointermove", (e) => {
+  if (!fingers.has(e.pointerId)) return;
+  fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (fingers.size === 2) {
+    view.zoom = clamp((zoom0 * pinch0) / Math.max(20, spread()), 0.3, 3);
+  } else if (last) {
+    const dx = e.clientX - last.x;
+    const dy = e.clientY - last.y;
+    moved += Math.abs(dx) + Math.abs(dy);
+    if (moved > 8) {
+      takeOver();
+      view.az -= dx * 0.25;
+      view.el = clamp(view.el + dy * 0.2, -25, 84);
+    }
+    last = { x: e.clientX, y: e.clientY };
+  }
+});
+function lift(e) {
+  if (!fingers.has(e.pointerId)) return;
+  const tap = e.type === "pointerup" && fingers.size === 1 && moved <= 8 && performance.now() - downAt < 450;
+  fingers.delete(e.pointerId);
+  last = null;
+  if (tap) {
+    const hit = pick(e.clientX, e.clientY);
+    if (hit) touchNote(hit.lane);
+  }
+}
+canvas.addEventListener("pointerup", lift);
+canvas.addEventListener("pointercancel", lift);
+canvas.addEventListener(
+  "wheel",
+  (e) => {
+    e.preventDefault();
+    view.zoom = clamp(view.zoom * Math.exp(e.deltaY * 0.0012), 0.3, 3);
+  },
+  { passive: false },
+);
+
+// the note names at the bottom are keys too
+const laneOf = {};
+S.lanes.forEach((l, i) => {
+  const pc = l.name.replace(/[0-9]/g, "");
+  if (!(pc in laneOf) && i >= 3) laneOf[pc] = i;      // the middle octave
+});
+$("scale").addEventListener("click", (e) => {
+  const el = e.target.closest(".note");
+  if (!el || !(el.dataset.pc in laneOf)) return;
+  touchNote(laneOf[el.dataset.pc]);
+  el.animate([{ transform: "translateY(-4px)" }, { transform: "none" }], { duration: 260, easing: "ease-out" });
+});
+
+// chapters: the four parts of the piece, as one line you can touch
+const chapters = $("chapters");
+const bounds = [0, ...S.sections.slice(1).map((s) => s.t), DUR];
+const ROMAN = ["I", "II", "III", "IV"];
+const chaps = S.sections.map((s, i) => {
+  const el = document.createElement("div");
+  el.className = "chap";
+  el.style.flex = `${bounds[i + 1] - bounds[i]} 1 0`;
+  el.innerHTML = `<div class="name">${ROMAN[i]}<span class="long"> · ${s.en}</span></div><div class="line"><span></span></div>`;
+  chapters.appendChild(el);
+  return { el, fill: el.querySelector(".line span") };
+});
+function timeAt(clientX) {
+  for (let i = 0; i < chaps.length; i++) {
+    const r = chaps[i].el.getBoundingClientRect();
+    if (clientX <= r.right + 2 || i === chaps.length - 1) {
+      return bounds[i] + clamp((clientX - r.left) / r.width, 0, 1) * (bounds[i + 1] - bounds[i]);
+    }
+  }
+  return 0;
+}
+let dragChap = false;
+let resumeAfter = false;
+chapters.addEventListener("pointerdown", (e) => {
+  try {
+    chapters.setPointerCapture(e.pointerId);
+  } catch (err) {
+    /* a synthetic pointer cannot be captured */
+  }
+  dragChap = true;
+  resumeAfter = playing;
+  if (playing) pause();
+  tPaused = timeAt(e.clientX);
+});
+chapters.addEventListener("pointermove", (e) => {
+  if (dragChap) tPaused = timeAt(e.clientX);
+});
+const endChap = () => {
+  if (!dragChap) return;
+  dragChap = false;
+  if (resumeAfter) begin(tPaused);
+};
+chapters.addEventListener("pointerup", endChap);
+chapters.addEventListener("pointercancel", endChap);
+
+// the "about" sheet
+const about = $("about");
+document.querySelectorAll("[data-about]").forEach((el) => el.addEventListener("click", () => about.classList.toggle("open")));
+$("close").addEventListener("click", () => about.classList.remove("open"));
 
 window.addEventListener("keydown", (e) => {
-  if (!started || e.target === scrub) return;
+  if (e.code === "Escape") about.classList.remove("open");
+  if (!started) return;
   if (e.code === "Space") {
     e.preventDefault();
     if (playing) pause();
     else begin(tPaused);
   } else if (e.code === "ArrowRight" || e.code === "ArrowLeft") {
-    const t = Math.min(DUR, Math.max(0, now() + (e.code === "ArrowRight" ? 5 : -5)));
+    const t = clamp(filmNow() + (e.code === "ArrowRight" ? 5 : -5), 0, DUR);
     if (playing) begin(t);
     else tPaused = t;
+  } else if (e.code === "KeyF") {
+    follow();
   }
 });
-
-// drag to look around: the camera keeps its course, the visitor adds a turn on top
-let dragging = false;
-let px = 0;
-let py = 0;
-canvas.addEventListener("pointerdown", (e) => {
-  dragging = true;
-  px = e.clientX;
-  py = e.clientY;
-  canvas.setPointerCapture(e.pointerId);
-});
-canvas.addEventListener("pointermove", (e) => {
-  if (!dragging) return;
-  view.az = Math.max(-80, Math.min(80, view.az - (e.clientX - px) * 0.22));
-  view.el = Math.max(-30, Math.min(40, view.el + (e.clientY - py) * 0.18));
-  px = e.clientX;
-  py = e.clientY;
-});
-const endDrag = () => (dragging = false);
-canvas.addEventListener("pointerup", endDrag);
-canvas.addEventListener("pointercancel", endDrag);
 
 window.addEventListener("resize", resize);
 document.addEventListener("fullscreenchange", resize);
 if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
 
 // ---------------------------------------------------------------- the loop
-const ramp = (t, a, b) => Math.min(1, Math.max(0, (t - a) / (b - a)));
-const titleCard = $("card-title");
-const endCard = $("card-end");
-const hud = $("hud");
+const top = $("top");
+const done = $("done");
+top.style.opacity = "0";
 let lastTs = 0;
 let acc = 0;
 let nAcc = 0;
@@ -282,37 +504,28 @@ let downgrades = 0;
 function frame(ts) {
   const dt = Math.min(0.1, lastTs ? (ts - lastTs) / 1000 : 0.016);
   lastTs = ts;
-  let t = now();
-  if (playing && t >= DUR) {
+  schedule();
+  if (playing && filmNow() >= DUR) {
     pause();
-    tPaused = t = DUR;
+    tPaused = DUR;
   }
-  if (!dragging && playing) {          // the visitor's turn eases back while the piece plays
-    const k = Math.exp(-dt / 1.6);
-    view.az *= k;
-    view.el *= k;
-  }
+  const t = seen();
+  // before the drop the camera breathes a little; afterwards that fades out
+  if (!started && !view.free) view.sway = 7 * Math.sin(ts / 3800);
+  else view.sway *= Math.exp(-dt / 0.8);
   renderAt(t);
 
-  const title = ramp(t, 0.4, 1.4) * (1 - ramp(t, T_REL - 0.75, T_REL - 0.05));
-  titleCard.style.opacity = title.toFixed(3);
-  titleCard.style.visibility = title < 0.01 ? "hidden" : "visible";
-  playBig.style.opacity = started ? "0" : "1";
-  playBig.style.pointerEvents = started ? "none" : "auto";
-  hud.style.opacity = (ramp(t, T_REL + 0.1, T_REL + 1.0) * (1 - ramp(t, T_LAST + 2.6, T_LAST + 4.0))).toFixed(3);
-  const end = ramp(t, T_LAST + 4.4, T_LAST + 6.0);
-  endCard.style.opacity = end.toFixed(3);
-  endCard.style.visibility = end < 0.01 ? "hidden" : "visible";
-  const over = t >= DUR - 1.2 ? "1" : "0";
-  again.style.opacity = over;
-  again.style.pointerEvents = over === "1" ? "auto" : "none";
-  if (!scrubbing) scrub.value = String(t);
-  fill.style.width = `${(t / DUR) * 100}%`;
-  timeEl.textContent = `${fmt(t)} / ${fmt(DUR)}`;
-  const wantPath = playing ? PATH_PAUSE : PATH_PLAY;
-  if (togglePath.getAttribute("d") !== wantPath) {
-    togglePath.setAttribute("d", wantPath);
-    toggle.setAttribute("aria-label", playing ? "Pause" : "Play");
+  top.style.opacity = started ? "1" : "0";
+  done.classList.toggle("show", started && t >= T_LAST + 6.5 && !about.classList.contains("open"));
+  for (let i = 0; i < chaps.length; i++) {
+    const f = clamp((t - bounds[i]) / (bounds[i + 1] - bounds[i]), 0, 1);
+    chaps[i].fill.style.width = `${f * 100}%`;
+    chaps[i].el.classList.toggle("on", t >= bounds[i] && t < bounds[i + 1]);
+  }
+  const want = playing ? "M1 0h3v10H1zM6 0h3v10H6z" : "M1 0l9 5-9 5z";
+  if (togglePath.getAttribute("d") !== want) {
+    togglePath.setAttribute("d", want);
+    $("toggle").setAttribute("aria-label", playing ? "Pause" : "Play");
   }
 
   // slow machine: draw fewer pixels rather than drop frames
@@ -331,3 +544,8 @@ function frame(ts) {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+
+// installable: the page keeps working without a connection once it has been opened
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}

@@ -18,7 +18,13 @@ let W = 1920;
 let H = 1080;
 let PR = 1;
 export const quality = { maxPR: 2 };
-export const view = { az: 0, el: 0 };   // the visitor's own turn of the camera, in degrees
+// The visitor's camera. While `free` is false the camera keeps its course and az/el are a turn on
+// top of it; once the visitor takes over (`free`), az/el are the angles themselves. zoom < 1 is closer.
+export const view = { az: 0, el: 0, zoom: 1, free: false, sway: 0 };
+export function rigAt(t) {
+  const [az, el] = spline(RIGS[THEME], t);
+  return { az, el };
+}
 const [PW, PL, PT] = S.pad;
 const R = S.r;
 const SEC = S.sections.map((s) => s.t);
@@ -653,11 +659,21 @@ function follow(t, pos, look) {
   const span = target(t, T0v);
   target(t + 1.2, T1v);
   dir.copy(T1v).sub(T0v).normalize();
-  const [azD, elD, fh, la, lift] = spline(RIGS[THEME], t);
-  const az = ((azD + view.az) * Math.PI) / 180;
-  const el = (Math.min(82, Math.max(-25, elD + view.el)) * Math.PI) / 180;
+  let [azD, elD, fh, la, lift] = spline(RIGS[THEME], t);
+  if (view.free) {
+    azD = view.az;
+    elD = view.el;
+    fh = 1.7;
+    la = 0.25;
+    lift = 0;
+  } else {
+    azD += view.az + view.sway;
+    elD += view.el;
+  }
+  const az = (azD * Math.PI) / 180;
+  const el = (Math.min(86, Math.max(-30, elD)) * Math.PI) / 180;
   const fit = Math.max(1, 0.85 / camera.aspect);      // tall screens: step back so the width still fits
-  const D = (fit * fh * span) / (2 * Math.tan((L.fov * Math.PI) / 360));
+  const D = (view.zoom * fit * fh * span) / (2 * Math.tan((L.fov * Math.PI) / 360));
   pos.copy(T0v)
     .addScaledVector(rS, D * Math.sin(az) * Math.cos(el))
     .addScaledVector(uS, D * Math.sin(el))
@@ -669,7 +685,7 @@ function follow(t, pos, look) {
 let reveal = 0;
 function renderCamera(t) {
   const span = follow(t, camPos, camLook);
-  reveal = THEME === "gonbad" ? smooth01((t - (T_LAST + 0.5)) / 5.5) : 0;
+  reveal = THEME === "gonbad" && !view.free ? smooth01((t - (T_LAST + 0.5)) / 5.5) : 0;
   if (reveal > 0) {
     // the last view: past the end, looking back up the whole stairway into the dome
     const drift = t - T_LAST;
@@ -720,6 +736,7 @@ const noteEls = {};
 for (const pc of PCS) {
   const el = document.createElement("div");
   el.className = "note";
+  el.dataset.pc = pc;
   el.innerHTML = `<span class="lamp"></span><span class="nm">${PC_LABEL[pc]}</span>`;
   scaleEl.appendChild(el);
   noteEls[pc] = el;
@@ -772,8 +789,13 @@ function renderAt(t) {
       flash = Math.exp(-d / 0.085);
       ring = Math.exp(-d / 1.3);
     }
+    if (tapped[i]) {                 // a tile the visitor touched lights up as if struck
+      const dt = (performance.now() - tapped[i]) / 1000;
+      if (dt > 2.5) tapped[i] = 0;
+      else flash = Math.max(flash, Math.exp(-dt / 0.12) + 0.35 * Math.exp(-dt / 0.9));
+    }
     if (THEME === "gonbad") {
-      let g = d >= 0 ? 0.5 + 2.6 * flash + 0.9 * ring : 0.16;
+      let g = d >= 0 ? 0.5 + 2.6 * flash + 0.9 * ring : 0.16 + 2.6 * flash;
       if (pulse >= 0) {   // one last wave of light runs down the whole stairway
         const w = pulse - ((p.h[0] - SEC[0]) / (T_LAST - SEC[0])) * 3.2;
         if (w > 0) g += 1.6 * Math.exp(-w / 0.5);
@@ -781,7 +803,7 @@ function renderAt(t) {
       }
       gc.copy(laneColor[p.l]).multiplyScalar(g);
       inlay.setColorAt(i, gc);
-      gc.copy(laneColor[p.l]).multiplyScalar(d >= 0 ? 0.3 + 1.5 * flash + 0.45 * ring : 0.085);
+      gc.copy(laneColor[p.l]).multiplyScalar(d >= 0 ? 0.3 + 1.5 * flash + 0.45 * ring : 0.085 + 1.5 * flash);
       padMesh.setColorAt(i, gc);
       const pa = pearls.geometry.attributes.color;
       const k = d >= 0 ? 0.42 + 1.4 * flash + 0.5 * ring + (pulse >= 0 ? 0.3 * reveal : 0) : 0.06;
@@ -913,4 +935,32 @@ export function resize() {
   grade.uniforms.uRes.value.set(W * PR, H * PR);
 }
 resize();
+// which tile is under a point of the screen (client coordinates)? For tapping tiles like keys.
+const tapped = new Float64Array(NH);
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+export function pick(clientX, clientY) {
+  const box = canvas.getBoundingClientRect();
+  ndc.set(((clientX - box.left) / box.width) * 2 - 1, -(((clientY - box.top) / box.height) * 2 - 1));
+  ray.setFromCamera(ndc, camera);
+  let best = -1;
+  let bestD = Infinity;
+  // tiles are small on screen: take the nearest tile within a finger's width of the ray
+  const tol = 0.03 + 0.012 * (camera.position.distanceTo(camLook) || 1);
+  for (let i = 0; i < NH; i++) {
+    const d = ray.ray.distanceToPoint(padTop[i]);
+    if (d < tol) {
+      const along = padTop[i].distanceTo(camera.position);
+      const score = d * 6 + along * 0.02;
+      if (score < bestD) {
+        bestD = score;
+        best = i;
+      }
+    }
+  }
+  if (best < 0) return null;
+  tapped[best] = performance.now();
+  return { lane: hops[best].l, name: S.lanes[hops[best].l].name };
+}
+export const PITCH_CLASS = (lane) => pcOf(S.lanes[lane].name);
 export { renderAt };

@@ -2,16 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
     <title>Shur in g: a Persian piece played by gravity</title>
     <meta
       name="description"
-      content="Two balls are dropped. Every tile they land on is a note of an original piece in Dastgāh-e Shur. Nothing about the balls is animated: gravity plays, live in your browser."
+      content="Drop two balls and let gravity play an original piece in Dastgāh-e Shur. Tap the tiles, look around, slow it down, change the instrument."
     />
     <meta property="og:title" content="Shur in g" />
     <meta
       property="og:description"
-      content="An original piece in Dastgāh-e Shur, played by gravity. Two balls are dropped and every collision is a note."
+      content="An original piece in Dastgāh-e Shur, played by gravity. Drop the balls, tap the tiles, look around."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://pasmod.github.io/shur-in-g/" />
@@ -20,10 +20,13 @@
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#02040c" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2302040c'/%3E%3Cg fill='none' stroke='%232ec4d6' stroke-width='3.5' stroke-linejoin='round'%3E%3Crect x='17' y='17' width='30' height='30'/%3E%3Crect x='17' y='17' width='30' height='30' transform='rotate(45 32 32)'/%3E%3C/g%3E%3Ccircle cx='32' cy='32' r='5' fill='%23ffd9a0'/%3E%3C/svg%3E"
-    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Shur in g" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/icon-180.png" />
     <link rel="preload" href="fonts/Cormorant.woff2" as="font" type="font/woff2" crossorigin />
     <script type="importmap">
       {
@@ -56,38 +59,42 @@
       }
       :root {
         --ground: #02040c;
+        --panel: rgba(8, 12, 26, 0.86);
         --ink: #ece6d6;
-        --dim: rgba(236, 230, 214, 0.64);
-        --faint: rgba(236, 230, 214, 0.22);
+        --dim: rgba(236, 230, 214, 0.66);
+        --faint: rgba(236, 230, 214, 0.2);
         --accent: #2ec4d6;
-        --pad: clamp(18px, 5.8vw, 112px);
+        --pad: clamp(14px, 4vw, 56px);
         --font-display: "Cormorant", "Iowan Old Style", Georgia, serif;
         --font-fa: "Vazirmatn", Tahoma, sans-serif;
       }
       html[data-look="negar"] {
         --ground: #eee3ca;
+        --panel: rgba(238, 227, 202, 0.92);
         --ink: #2a2018;
-        --dim: rgba(42, 32, 24, 0.72);
-        --faint: rgba(42, 32, 24, 0.25);
+        --dim: rgba(42, 32, 24, 0.74);
+        --faint: rgba(42, 32, 24, 0.24);
         --accent: #1f4e8c;
       }
       html[data-look="divar"] {
         --ground: #d9d0c2;
+        --panel: rgba(217, 208, 194, 0.92);
         --ink: #2b2723;
-        --dim: rgba(43, 39, 35, 0.72);
-        --faint: rgba(43, 39, 35, 0.25);
+        --dim: rgba(43, 39, 35, 0.74);
+        --faint: rgba(43, 39, 35, 0.24);
         --accent: #2f9fb3;
       }
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
       }
-      html {
-        background: var(--ground);
-        scroll-behavior: smooth;
-      }
+      html,
       body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
         background: var(--ground);
         color: var(--ink);
         font-family: var(--font-display);
@@ -100,19 +107,14 @@
         border: 0;
         cursor: pointer;
       }
-      a {
-        color: inherit;
+      i {
+        font-style: italic;
+        letter-spacing: 0;
       }
-
-      /* ---------------- the stage */
-      #stage-wrap {
-        position: relative;
-        height: 100vh;
-        height: 100svh;
-        min-height: 440px;
+      #app {
+        position: fixed;
+        inset: 0;
         overflow: hidden;
-        background: var(--ground);
-        touch-action: pan-y;
         user-select: none;
         -webkit-user-select: none;
       }
@@ -122,71 +124,71 @@
         width: 100%;
         height: 100%;
         display: block;
+        touch-action: none;
+        cursor: grab;
       }
-      .layer {
+      #stage:active {
+        cursor: grabbing;
+      }
+
+      /* ---------------- top: what is playing */
+      #top {
         position: absolute;
-        inset: 0;
+        left: 0;
+        right: 0;
+        top: 0;
+        padding: calc(env(safe-area-inset-top) + clamp(12px, 2.4vw, 34px)) var(--pad) 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
         pointer-events: none;
-      }
-      #hud {
-        opacity: 0;
-      }
-      #hud-title {
-        position: absolute;
-        left: var(--pad);
-        top: clamp(18px, 4.6vw, 88px);
+        transition: opacity 0.5s;
       }
       #hud-title .t {
-        font-size: clamp(19px, 2.4vw, 46px);
+        font-size: clamp(17px, 1.9vw, 34px);
         letter-spacing: 0.22em;
-        line-height: 1;
-      }
-      i {
-        font-style: italic;
-        letter-spacing: 0;
+        line-height: 1.1;
       }
       #hud-title .g {
-        margin-top: 0.55em;
-        font-size: clamp(12px, 1.45vw, 28px);
+        margin-top: 0.4em;
+        font-size: clamp(12px, 1.1vw, 20px);
         letter-spacing: 0.14em;
         color: var(--dim);
       }
       #hud-count {
-        position: absolute;
-        right: var(--pad);
-        top: clamp(16px, 4.4vw, 84px);
         text-align: right;
       }
       #hud-count .row {
         display: flex;
         align-items: baseline;
         justify-content: flex-end;
-        gap: 0.9em;
-        font-size: clamp(11px, 1.45vw, 28px);
+        gap: 0.8em;
+        font-size: clamp(11px, 1.05vw, 19px);
       }
       .lbl {
-        letter-spacing: 0.3em;
+        letter-spacing: 0.26em;
         color: var(--dim);
       }
       #count {
-        font-size: clamp(22px, 2.7vw, 52px);
+        font-size: clamp(22px, 2.2vw, 40px);
         font-weight: 500;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.08em;
         font-variant-numeric: tabular-nums lining-nums;
         line-height: 1;
       }
       #section {
-        margin-top: 0.55em;
+        margin-top: 0.5em;
         display: flex;
         gap: 0.6em;
         justify-content: flex-end;
         align-items: baseline;
-        font-size: clamp(11px, 1.45vw, 28px);
-        letter-spacing: 0.26em;
+        font-size: clamp(11px, 1.05vw, 19px);
+        letter-spacing: 0.2em;
         color: var(--dim);
       }
       #sec-no {
-        letter-spacing: 0.1em;
+        letter-spacing: 0.08em;
       }
       #sec-fa {
         font-family: var(--font-fa);
@@ -194,24 +196,41 @@
         letter-spacing: 0;
         font-size: 1.06em;
       }
-      #scale {
+
+      /* ---------------- bottom: the notes of the mode, then the controls */
+      #dock {
         position: absolute;
         left: 0;
         right: 0;
-        bottom: clamp(76px, 9.5vh, 112px);
+        bottom: 0;
+        padding: 0 var(--pad) calc(env(safe-area-inset-bottom) + clamp(10px, 1.6vw, 22px));
+        display: flex;
+        flex-direction: column;
+        gap: clamp(8px, 1vw, 14px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.6s;
+      }
+      body.started #dock {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #scale {
         display: flex;
         justify-content: center;
-        gap: clamp(9px, 2.4vw, 46px);
+        gap: clamp(4px, 1.6vw, 30px);
       }
       .note {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 0.4em;
-        font-size: clamp(13px, 1.65vw, 32px);
+        gap: 0.35em;
+        font-size: clamp(14px, 1.45vw, 26px);
         color: var(--dim);
-        min-width: 1.7em;
+        min-width: 2em;
+        padding: 6px 2px 2px;
         white-space: nowrap;
+        cursor: pointer;
       }
       .note .lamp {
         display: block;
@@ -221,266 +240,213 @@
         background: var(--faint);
       }
       .note small {
-        font-size: 0.66em;
-        letter-spacing: 0.06em;
-        margin-left: 0.2em;
+        font-size: 0.64em;
+        letter-spacing: 0.05em;
+        margin-left: 0.18em;
+      }
+      #chips {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chip {
+        height: 38px;
+        padding: 0 15px;
+        border: 1px solid var(--faint);
+        border-radius: 999px;
+        background: var(--panel);
+        font-size: 15px;
+        letter-spacing: 0.14em;
+        color: var(--dim);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+      .chip[aria-pressed="true"],
+      .chip:hover {
+        color: var(--ink);
+        border-color: var(--dim);
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--faint);
+        border-radius: 999px;
+        background: var(--panel);
+        overflow: hidden;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+      .seg button {
+        height: 36px;
+        padding: 0 15px;
+        font-size: 15px;
+        letter-spacing: 0.14em;
+        color: var(--dim);
+      }
+      .seg button[aria-pressed="true"] {
+        background: var(--ink);
+        color: var(--ground);
+      }
+      #transport {
+        display: flex;
+        align-items: center;
+        gap: clamp(8px, 1vw, 16px);
+      }
+      .round {
+        width: 46px;
+        height: 46px;
+        flex: none;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        border: 1px solid var(--faint);
+        background: var(--panel);
+        color: var(--ink);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+      .round svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+      #chapters {
+        position: relative;
+        flex: 1;
+        height: 46px;
+        display: flex;
+        gap: 4px;
+        cursor: pointer;
+        touch-action: none;
+      }
+      .chap {
+        position: relative;
+        height: 100%;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 7px;
+      }
+      .chap .name {
+        font-size: clamp(11px, 0.95vw, 16px);
+        letter-spacing: 0.18em;
+        color: var(--dim);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: clip;
+      }
+      .chap.on .name {
+        color: var(--ink);
+      }
+      .chap .line {
+        position: relative;
+        height: 3px;
+        border-radius: 2px;
+        background: var(--faint);
+        overflow: hidden;
+      }
+      .chap .line span {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 0;
+        background: var(--ink);
       }
 
-      /* ---------------- title and end cards */
-      .card {
+      /* ---------------- start, end, hints */
+      .center {
         position: absolute;
         left: 0;
         right: 0;
         text-align: center;
         padding: 0 var(--pad);
+        pointer-events: none;
+        transition: opacity 0.6s;
       }
-      .big {
+      #home {
+        top: clamp(64px, 17vh, 190px);
+      }
+      body.started #home {
+        opacity: 0;
+        visibility: hidden;
+      }
+      #home h1 {
         font-weight: 300;
+        font-size: clamp(40px, 8.1vw, 148px);
         letter-spacing: 0.2em;
         line-height: 1;
         padding-left: 0.2em;
       }
-      #card-title {
-        top: clamp(70px, 19vh, 214px);
-      }
-      #card-title .big {
-        font-size: clamp(40px, 8.1vw, 156px);
-      }
-      #card-title .fa {
-        margin-top: 0.95em;
+      #home .fa {
+        margin-top: 0.9em;
         font-family: var(--font-fa);
         font-weight: 200;
-        font-size: clamp(18px, 2.4vw, 46px);
+        font-size: clamp(18px, 2.3vw, 42px);
       }
-      #card-title .line {
-        margin-top: 1.1em;
-        font-size: clamp(16px, 2vw, 38px);
+      #home .line {
+        margin-top: 1em;
+        font-size: clamp(16px, 1.9vw, 34px);
         font-style: italic;
         color: var(--dim);
       }
-      .pill {
+      .primary {
         pointer-events: auto;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.7em;
-        margin-top: 1.7em;
-        padding: 0.62em 1.5em 0.6em 1.25em;
-        border: 1px solid var(--dim);
+        margin-top: 1.5em;
+        height: 58px;
+        padding: 0 34px;
         border-radius: 999px;
-        font-size: clamp(16px, 1.5vw, 26px);
-        letter-spacing: 0.16em;
-        transition:
-          background 0.25s,
-          color 0.25s,
-          opacity 0.4s;
-      }
-      .pill:hover,
-      .pill:focus-visible {
         background: var(--ink);
         color: var(--ground);
-        outline: none;
-      }
-      .pill svg {
-        width: 0.8em;
-        height: 0.8em;
-        fill: currentColor;
-      }
-      #card-end {
-        left: 0;
-        right: auto;
-        top: 26%;
-        text-align: left;
-        opacity: 0;
-      }
-      #card-end .big {
-        font-size: clamp(34px, 5.4vw, 104px);
-        padding-left: 0;
-      }
-      #card-end .line {
-        margin-top: 0.9em;
-        font-size: clamp(16px, 1.9vw, 36px);
-        font-style: italic;
-        line-height: 1.4;
-      }
-      #card-end .credit {
-        margin-top: 1.1em;
-        font-size: clamp(11px, 1.45vw, 28px);
-        letter-spacing: 0.12em;
-        line-height: 1.5;
-        color: var(--dim);
-      }
-      #again {
-        opacity: 0;
-        font-size: clamp(14px, 1.3vw, 22px);
-      }
-
-      /* ---------------- controls */
-      #controls {
-        position: absolute;
-        left: var(--pad);
-        right: var(--pad);
-        bottom: clamp(14px, 3vh, 34px);
-        height: 44px;
-        display: flex;
-        align-items: center;
-        gap: clamp(10px, 1.4vw, 22px);
-        opacity: 0;
-        transition: opacity 0.6s;
-        pointer-events: none;
-      }
-      body.started #controls {
-        opacity: 1;
-        pointer-events: auto;
-      }
-      .icon {
-        width: 44px;
-        height: 44px;
-        display: grid;
-        place-items: center;
-        border-radius: 50%;
-        color: var(--dim);
-        flex: none;
-      }
-      .icon:hover,
-      .icon:focus-visible {
-        color: var(--ink);
-        outline: none;
-      }
-      .icon svg {
-        width: 18px;
-        height: 18px;
-        fill: currentColor;
-      }
-      #scrub-wrap {
-        position: relative;
-        flex: 1;
-        height: 44px;
-        display: flex;
-        align-items: center;
-      }
-      #scrub {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 100%;
-        height: 44px;
-        background: transparent;
-        cursor: pointer;
-        position: relative;
-        z-index: 2;
-      }
-      #scrub::-webkit-slider-runnable-track {
-        height: 2px;
-        background: transparent;
-      }
-      #scrub::-moz-range-track {
-        height: 2px;
-        background: transparent;
-      }
-      #scrub::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 13px;
-        height: 13px;
-        margin-top: -5.5px;
-        border-radius: 50%;
-        background: var(--ink);
-      }
-      #scrub::-moz-range-thumb {
-        width: 13px;
-        height: 13px;
-        border: 0;
-        border-radius: 50%;
-        background: var(--ink);
-      }
-      #scrub:focus-visible {
-        outline: 1px solid var(--dim);
-        outline-offset: 2px;
-      }
-      #track,
-      #fill {
-        position: absolute;
-        left: 0;
-        top: 50%;
-        height: 2px;
-        margin-top: -1px;
-        border-radius: 1px;
-      }
-      #track {
-        right: 0;
-        background: var(--faint);
-      }
-      #fill {
-        width: 0;
-        background: var(--dim);
-      }
-      .tick {
-        position: absolute;
-        top: 50%;
-        width: 1px;
-        height: 9px;
-        margin-top: -4.5px;
-        background: var(--dim);
-      }
-      #time {
-        font-size: clamp(13px, 1.1vw, 19px);
-        letter-spacing: 0.08em;
-        font-variant-numeric: tabular-nums lining-nums;
-        color: var(--dim);
-        flex: none;
-        min-width: 5.6em;
-        text-align: right;
-      }
-      #inst {
-        flex: none;
-        display: flex;
-        align-items: center;
-        gap: 0.5em;
-        font-size: clamp(12px, 1.05vw, 18px);
+        font-size: clamp(17px, 1.4vw, 23px);
+        font-weight: 600;
         letter-spacing: 0.18em;
-        color: var(--faint);
+        transition: transform 0.2s;
       }
-      #inst button {
-        height: 44px;
-        color: var(--dim);
+      .primary:hover {
+        transform: scale(1.04);
+      }
+      .primary[disabled] {
         opacity: 0.6;
-        border-bottom: 1px solid transparent;
       }
-      #inst button[aria-pressed="true"] {
-        color: var(--ink);
-        opacity: 1;
-      }
-      #inst button:hover,
-      #inst button:focus-visible {
-        opacity: 1;
-        outline: none;
-      }
-      #hint {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: clamp(140px, 19vh, 200px);
-        text-align: center;
-        font-style: italic;
-        font-size: clamp(14px, 1.2vw, 21px);
-        color: var(--dim);
-        opacity: 0;
-        transition: opacity 1s;
-      }
-      #more {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: clamp(18px, 3.4vh, 38px);
-        text-align: center;
-        font-size: clamp(13px, 1.1vw, 19px);
-        letter-spacing: 0.22em;
-        color: var(--dim);
+      #home .row {
+        margin-top: 18px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
         pointer-events: auto;
-        text-decoration: none;
-        transition: opacity 0.6s;
       }
-      body.started #more {
+      .link {
+        pointer-events: auto;
+        margin-top: 16px;
+        font-size: clamp(14px, 1.1vw, 18px);
+        letter-spacing: 0.2em;
+        color: var(--dim);
+        padding: 8px 12px;
+      }
+      #done {
+        top: 30%;
         opacity: 0;
-        pointer-events: none;
+        visibility: hidden;
+      }
+      #done.show {
+        opacity: 1;
+        visibility: visible;
+      }
+      #done .line {
+        font-size: clamp(17px, 1.7vw, 30px);
+        font-style: italic;
+      }
+      #toast {
+        bottom: clamp(190px, 27vh, 260px);
+        font-style: italic;
+        font-size: clamp(15px, 1.2vw, 21px);
+        color: var(--dim);
+        opacity: 0;
       }
       #fail {
         display: none;
@@ -494,102 +460,120 @@
         color: var(--dim);
       }
 
-      /* ---------------- the story below */
-      article {
-        max-width: 43rem;
-        margin: 0 auto;
-        padding: clamp(56px, 9vw, 130px) clamp(22px, 5vw, 40px) clamp(40px, 6vw, 90px);
-        font-size: clamp(19px, 1.35vw, 23px);
-        line-height: 1.6;
+      /* ---------------- the "about" sheet */
+      #about {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: min(560px, 100%);
+        background: var(--panel);
+        border-left: 1px solid var(--faint);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        transform: translateX(102%);
+        transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        user-select: text;
+        -webkit-user-select: text;
+        padding: calc(env(safe-area-inset-top) + 26px) clamp(22px, 4vw, 44px) calc(env(safe-area-inset-bottom) + 44px);
+        font-size: clamp(18px, 1.25vw, 21px);
+        line-height: 1.58;
+        z-index: 5;
       }
-      article h1 {
+      #about.open {
+        transform: none;
+      }
+      #about h2 {
         font-weight: 300;
-        font-size: clamp(34px, 4vw, 58px);
+        font-size: clamp(30px, 3vw, 44px);
         letter-spacing: 0.16em;
         line-height: 1.1;
       }
-      article .sub {
-        margin-top: 0.7em;
+      #about .sub {
+        margin-top: 0.6em;
         font-style: italic;
         color: var(--dim);
       }
-      article h2 {
-        margin: 2.6em 0 0.7em;
-        font-weight: 500;
-        font-size: 0.82em;
-        letter-spacing: 0.28em;
-        text-transform: uppercase;
-        color: var(--accent);
-      }
-      article p + p {
-        margin-top: 0.95em;
-      }
-      article .facts {
-        margin-top: 2.2em;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
-        gap: 1.3em 1em;
-        border-top: 1px solid var(--faint);
-        border-bottom: 1px solid var(--faint);
-        padding: 1.3em 0;
-      }
-      article .facts b {
+      #about .fa {
         display: block;
-        font-weight: 400;
-        font-size: 1.75em;
-        line-height: 1.1;
-        font-variant-numeric: lining-nums;
-      }
-      article .facts span {
-        font-size: 0.82em;
-        color: var(--dim);
-      }
-      article .fa {
-        display: block;
-        margin-top: 0.35em;
+        margin-top: 0.3em;
         font-family: var(--font-fa);
         font-weight: 300;
         font-style: normal;
         font-size: 0.92em;
       }
-      footer {
-        max-width: 43rem;
-        margin: 0 auto;
-        padding: 0 clamp(22px, 5vw, 40px) clamp(48px, 7vw, 90px);
-        font-size: clamp(15px, 1.05vw, 18px);
-        line-height: 1.6;
+      #about h3 {
+        margin: 2.2em 0 0.6em;
+        font-weight: 500;
+        font-size: 0.8em;
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      #about p + p {
+        margin-top: 0.85em;
+      }
+      #about .facts {
+        margin-top: 1.8em;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.1em 1em;
+        border-top: 1px solid var(--faint);
+        border-bottom: 1px solid var(--faint);
+        padding: 1.1em 0;
+      }
+      #about .facts b {
+        display: block;
+        font-weight: 400;
+        font-size: 1.6em;
+        line-height: 1.1;
+        font-variant-numeric: lining-nums;
+      }
+      #about .facts span {
+        font-size: 0.82em;
         color: var(--dim);
       }
+      #about .small {
+        margin-top: 2.4em;
+        font-size: 0.82em;
+        color: var(--dim);
+      }
+      #about a {
+        color: inherit;
+      }
+      #close {
+        position: sticky;
+        top: 0;
+        float: right;
+        margin: -6px -8px 0 12px;
+      }
 
-      @media (max-width: 620px) {
-        #section {
+      @media (max-width: 640px) {
+        .chap .name {
+          letter-spacing: 0.08em;
+        }
+        .chap .name .long {
+          display: none;
+        }
+        .chip,
+        .seg button {
+          font-size: 13px;
+          padding: 0 11px;
           letter-spacing: 0.1em;
         }
-        .lbl {
-          letter-spacing: 0.18em;
-        }
-        #card-end {
-          right: 0;
-          top: 13%;
-          text-align: center;
-        }
-        #card-end .big {
-          padding-left: 0.2em;
-        }
-        #time {
-          display: none;
-        }
-        #full {
-          display: none;
+        #section {
+          letter-spacing: 0.08em;
         }
       }
     </style>
   </head>
   <body>
-    <main id="stage-wrap" aria-label="Shur in g, played live">
-      <canvas id="stage"></canvas>
+    <div id="app">
+      <canvas id="stage" aria-label="The fall: tiles and two balls. Drag to look around, tap a tile to play it."></canvas>
 
-      <div id="hud" class="layer" aria-hidden="true">
+      <header id="top">
         <div id="hud-title">
           <div class="t">SHUR IN <i>g</i></div>
           <div class="g">g = 9.81 m/s²</div>
@@ -601,156 +585,162 @@
             ><span id="sec-fa" dir="rtl" lang="fa">درآمد</span>
           </div>
         </div>
-        <div id="scale"></div>
-      </div>
+      </header>
 
-      <div class="layer">
-        <div id="card-title" class="card">
-          <h1 class="big">SHUR IN <i>g</i></h1>
-          <div class="fa" dir="rtl" lang="fa">دستگاه شور، با مضرابِ جاذبه</div>
-          <div class="line">Two balls are dropped. Gravity plays the rest.</div>
-          <button id="play-big" class="pill" type="button">
-            <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 0l9 5-9 5z" /></svg><span>PLAY</span>
-          </button>
-        </div>
-        <div id="card-end" class="card">
-          <div class="big">SHUR IN <i>g</i></div>
-          <div class="line">An original piece in Dastgāh-e Shur.</div>
-          <div class="line" style="margin-top: 0.15em">
-            <span class="n-hits">479</span> collisions, none of them animated.
+      <section id="home" class="center">
+        <h1>SHUR IN <i>g</i></h1>
+        <div class="fa" dir="rtl" lang="fa">دستگاه شور، با مضرابِ جاذبه</div>
+        <div class="line">Two balls, a long fall, and every landing is a note.</div>
+        <button id="drop" class="primary" type="button">DROP THE BALLS</button>
+        <div class="row">
+          <div class="seg" role="group" aria-label="Instrument">
+            <button type="button" data-inst="setar" aria-pressed="false">SETAR</button
+            ><button type="button" data-inst="santur" aria-pressed="false">SANTUR</button>
           </div>
-          <div class="credit">COMPOSED AND SIMULATED IN CODE BY CLAUDE<br />OPUS 5.5 &amp; FABLE 5.2</div>
-          <button id="again" class="pill" type="button">
-            <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 0l9 5-9 5z" /></svg><span>PLAY AGAIN</span>
-          </button>
         </div>
-        <div id="hint">Drag to look around</div>
-        <a id="more" href="#about">HOW IT WORKS ↓</a>
-        <div id="fail">
-          This piece is drawn live with WebGL, which this browser does not offer. Please try a current version of
-          Chrome, Safari, Firefox or Edge.
-        </div>
+        <button class="link" type="button" data-about>HOW IT WORKS</button>
+      </section>
+
+      <div id="done" class="center">
+        <div class="line">That was Shur in g. The tiles stay: tap them, or let it fall again.</div>
+        <button id="again" class="primary" type="button">DROP AGAIN</button>
+      </div>
+      <div id="toast" class="center"></div>
+      <div id="fail">
+        This piece is drawn live with WebGL, which this browser does not offer. Please try a current version of
+        Chrome, Safari, Firefox or Edge.
       </div>
 
-      <div id="controls">
-        <button id="toggle" class="icon" type="button" aria-label="Pause">
-          <svg viewBox="0 0 10 10" aria-hidden="true"><path id="toggle-path" d="M1 0h3v10H1zM6 0h3v10H6z" /></svg>
-        </button>
-        <div id="scrub-wrap">
-          <div id="track"></div>
-          <div id="fill"></div>
-          <input id="scrub" type="range" min="0" max="94" step="0.01" value="0" aria-label="Position in the piece" />
+      <nav id="dock">
+        <div id="scale" aria-label="The notes of the mode. Tap one to hear it."></div>
+        <div id="chips">
+          <div class="seg" role="group" aria-label="Instrument">
+            <button type="button" data-inst="setar" aria-pressed="false">SETAR</button
+            ><button type="button" data-inst="santur" aria-pressed="false">SANTUR</button>
+          </div>
+          <button id="speed" class="chip" type="button" aria-label="Speed">1×</button>
+          <button id="cam" class="chip" type="button" aria-pressed="true">FOLLOW</button>
+          <button class="chip" type="button" data-about aria-label="How it works">ABOUT</button>
         </div>
-        <div id="time">0:00 / 1:34</div>
-        <div id="inst" role="group" aria-label="Instrument">
-          <button id="inst-setar" type="button" aria-pressed="true">SETAR</button
-          ><span aria-hidden="true">·</span
-          ><button id="inst-santur" type="button" aria-pressed="false">SANTUR</button>
+        <div id="transport">
+          <button id="toggle" class="round" type="button" aria-label="Pause">
+            <svg viewBox="0 0 10 10" aria-hidden="true"><path id="toggle-path" d="M1 0h3v10H1zM6 0h3v10H6z" /></svg>
+          </button>
+          <div id="chapters" role="slider" aria-label="Position in the piece" tabindex="0"></div>
         </div>
-        <button id="full" class="icon" type="button" aria-label="Full screen">
+      </nav>
+
+      <aside id="about" aria-label="How it works">
+        <button id="close" class="round" type="button" aria-label="Close">
           <svg viewBox="0 0 10 10" aria-hidden="true">
-            <path d="M0 0h4v1.4H1.4V4H0zM6 0h4v4H8.6V1.4H6zM0 6h1.4v2.6H4V10H0zM8.6 6H10v4H6V8.6h2.6z" />
+            <path d="M1 0L5 4 9 0l1 1-4 4 4 4-1 1-4-4-4 4-1-1 4-4-4-4z" />
           </svg>
         </button>
-      </div>
-    </main>
+        <h2>SHUR IN <i>g</i></h2>
+        <p class="sub">
+          An original piece of Persian music, played by nothing but falling.
+          <span class="fa" dir="rtl" lang="fa">دستگاه شور، با مضرابِ جاذبه</span>
+        </p>
+        <div class="facts">
+          <div><b class="n-score">428</b><span>notes in the score</span></div>
+          <div><b class="n-hits">479</b><span>collisions, counting the ricochets</span></div>
+          <div><b class="n-drop">59 m</b><span>from the first tile to the last</span></div>
+          <div><b>0</b><span>moments where a ball is moved by hand</span></div>
+        </div>
 
-    <article id="about">
-      <h1>SHUR IN <i>g</i></h1>
-      <p class="sub">
-        An original piece of Persian music, played by nothing but falling.
-        <span class="fa" dir="rtl" lang="fa">دستگاه شور، با مضرابِ جاذبه</span>
-      </p>
+        <h3>What you can do</h3>
+        <p>
+          Drop the balls and watch, or take over: drag to look around, pinch or scroll to come closer, and tap any
+          tile, or a note name at the bottom, to play it yourself. You can slow the fall down without the notes
+          going out of tune, jump between the four parts, and change the instrument while it plays. On a phone you
+          can add this page to your home screen; it then opens like an app and also works without a connection.
+        </p>
 
-      <div class="facts">
-        <div><b class="n-score">428</b><span>notes in the score</span></div>
-        <div><b class="n-hits">479</b><span>collisions, counting the ricochets</span></div>
-        <div><b class="n-drop">59 m</b><span>from the first tile to the last</span></div>
-        <div><b>0</b><span>moments where a ball is moved by hand</span></div>
-      </div>
+        <h3>What you are watching</h3>
+        <p>
+          Two balls are let go at the top of a long fall. Every tile they land on is a note. Where a tile stands from
+          left to right is its pitch, and how hard the ball lands on it is how loud the note sounds.
+        </p>
+        <p>
+          The balls are never moved by hand. A physics simulation with ordinary gravity, 9.81 m/s², carries them from
+          the first tile to the last, and a tile can only take speed away from a ball, never add any. Each note you
+          hear is triggered at the moment of its collision.
+        </p>
 
-      <h2>What you are watching</h2>
-      <p>
-        Two balls are let go at the top of a long fall. Every tile they land on is a note. Where a tile stands from
-        left to right is its pitch, and how hard the ball lands on it is how loud the note sounds.
-      </p>
-      <p>
-        That is all there is to it. The balls are never moved by hand. A physics simulation with ordinary gravity,
-        9.81 m/s², carries them from the first tile to the last, and a tile can only take speed away from a ball,
-        never add any.
-      </p>
-      <p>
-        One ball is gold and one is silver, so you can follow each of them. You can pause, move through the piece on
-        the line at the bottom, and drag the picture to look around.
-      </p>
-      <p>
-        The same collisions can be heard on two instruments; you choose at the bottom right. The setar is a small
-        long-necked lute, plucked with the nail of the index finger: here the two balls are the two directions of
-        the nail, down and up. The santur is the Persian hammered dulcimer: there the balls are its two mezrabs, the
-        light wooden hammers.
-      </p>
+        <h3>The piece</h3>
+        <p>
+          “Shur in g” is an original piece in Dastgāh-e Shur, one of the seven modal systems of Persian classical
+          music, here built on the note G. It has four parts. The Darāmad, the opening, is free in rhythm and circles
+          the home note. The Chahārmezrāb is fast, in 6/8, over a G that keeps returning. The Owj, the peak, climbs
+          into the high octave. The Forud brings everything back down to G.
+        </p>
+        <p>
+          Shur uses two notes a piano does not have: A koron and D koron, each about a quarter tone lower than A and
+          D. Their tiles stand exactly where the pitch puts them, between their neighbours.
+        </p>
+        <p>
+          A struck or plucked string cannot be held, so long notes are played as a tremolo, called riz: the two balls
+          take turns on the same pitch. Where a phrase ends, the balls land on soft bars, bounce a few times and lie
+          still. That is the silence between phrases. Then they roll off the end and fall into the next one.
+        </p>
 
-      <h2>The piece</h2>
-      <p>
-        “Shur in g” is an original piece in Dastgāh-e Shur, one of the seven modal systems of Persian classical
-        music, here built on the note G. It has four parts. The Darāmad, the opening, is free in rhythm and circles
-        the home note. The Chahārmezrāb is fast, in 6/8, over a G that keeps returning. The Owj, the peak, climbs
-        into the high octave. The Forud brings everything back down to G.
-      </p>
-      <p>
-        Shur uses two notes a piano does not have: A koron and D koron, each about a quarter tone lower than A and D.
-        Their tiles stand exactly where the pitch puts them, between their neighbours.
-      </p>
-      <p>
-        A struck string cannot be held, so long notes are played as a tremolo, called riz: the two balls take turns
-        on the same pitch. Where a phrase ends, the balls land on soft bars, bounce a few times and lie still. That
-        is the silence between phrases. Then they roll off the end and fall into the next one.
-      </p>
+        <h3>How it was built</h3>
+        <p>
+          The music was written first, as a list of notes and times. A program then worked out, note by note, where
+          each tile has to stand, how far it tilts and how bouncy it is, so that a falling ball arrives at the right
+          place at the right moment. Bouncing magnifies the smallest error, so every tile was placed from the state
+          of the running simulation and not from a formula.
+        </p>
+        <p>
+          When all the tiles stood, a second, separate run of the simulation had to play the whole piece again on its
+          own. It had to strike every note of the score to within a millionth of a second, and no ball was allowed to
+          brush any other tile on its way.
+        </p>
 
-      <h2>How it was built</h2>
-      <p>
-        The music was written first, as a list of notes and times. A program then worked out, note by note, where
-        each tile has to stand, how far it tilts and how bouncy it is, so that a falling ball arrives at the right
-        place at the right moment. Bouncing magnifies the smallest error, so every tile was placed from the state of
-        the running simulation and not from a formula.
-      </p>
-      <p>
-        When all the tiles stood, a second, separate run of the simulation had to play the whole piece again on its
-        own. It had to strike every note of the score to within a millionth of a second, and no ball was allowed to
-        brush any other tile on its way.
-      </p>
+        <h3>Loud is steep</h3>
+        <p>
+          A ball that falls further lands faster, and a faster landing is a louder note. So the loudness of the piece
+          is written into the shape of the fall. Where the music grows, the staircase gets steeper, and an accent is a
+          deeper drop into one note. A pause costs height too, because a ball that stays in the air longer comes down
+          harder.
+        </p>
 
-      <h2>Loud is steep</h2>
-      <p>
-        A ball that falls further lands faster, and a faster landing is a louder note. So the loudness of the piece
-        is written into the shape of the fall. Where the music grows, the staircase gets steeper, and an accent is a
-        deeper drop into one note.
-      </p>
-      <p>
-        A pause costs height too, because a ball that stays in the air longer comes down harder. That is why the
-        slow, spacious notes ring out and the fast tremolo strokes, which are only small hops, stay soft.
-      </p>
+        <h3>The two instruments</h3>
+        <p id="about-setar">
+          The setar is a small long-necked lute, plucked with the nail of the index finger. Its notes here are real:
+          single plucks of a setar, recorded fret by fret, with the instrument's own koron frets. When the next note
+          is played on a string, the one before it stops, as under a player's finger, and a strong stroke also
+          brushes the open drone strings.
+        </p>
+        <p>
+          The santur is the Persian hammered dulcimer; there the two balls are its two mezrabs, the light wooden
+          hammers. Its sound is not a recording but a computed model of a course of four strings, and every note
+          rings on over the next.
+        </p>
 
-      <h2>The sound</h2>
-      <p>
-        The sound is not a recording of an instrument. Each collision in the simulation sets off a computed model of
-        a string. How hard the ball hit decides how loud and how bright the note is.
-      </p>
-      <p>
-        On the setar it is one plucked steel string in a small wooden body. When the next note is played, the one
-        before it stops, as it does under a player's finger, and a strong stroke also brushes the open drone
-        strings. On the santur it is a course of four strings tuned a hair apart, struck by a hammer, and every note
-        rings on over the next.
-      </p>
-    </article>
-
-    <footer>
-      Composed, simulated and drawn in code by Claude (Opus 5.5 and Fable 5.2), 2026. The idea of letting gravity
-      play a piece of music comes from a “Sonata in g” posted by @imjustnewatai. Typefaces: Cormorant Garamond and
-      Vazirmatn, both under the SIL Open Font License.
-    </footer>
+        <p class="small">
+          Composed, simulated and drawn in code by Claude (Opus 5.5 and Fable 5.2), 2026. The idea of letting gravity
+          play a piece of music comes from a “Sonata in g” posted by @imjustnewatai.
+          <span id="credit-setar"
+            >Setar notes: recordings by
+            <a href="https://commons.wikimedia.org/wiki/User:Jacqke" target="_blank" rel="noopener">Jacqke</a> on
+            <a
+              href="https://commons.wikimedia.org/wiki/File:Setar_1st_string_tuned_to_C,_open_string_note.ogg"
+              target="_blank"
+              rel="noopener"
+              >Wikimedia Commons</a
+            >, licensed
+            <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>;
+            cut into single notes here, three high notes raised in pitch, and offered under the same licence
+            (snd/setar.m4a).</span
+          >
+          Typefaces: Cormorant Garamond and Vazirmatn, SIL Open Font License.
+        </p>
+      </aside>
+    </div>
 
     <script src="scene.js"></script>
+    <script src="notes.js"></script>
     <script type="module" src="player.js"></script>
   </body>
 </html>
