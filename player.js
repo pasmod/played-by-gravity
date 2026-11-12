@@ -54,11 +54,11 @@ document.querySelectorAll(".n-score").forEach((el) => (el.textContent = S.n_scor
 document.querySelectorAll(".n-drop").forEach((el) => (el.textContent = `${drop} m`));
 
 // ---------------------------------------------------------------- the sound: one note per collision
-const FILES = { setar: "snd/setar.m4a", santur: "snd/santur.m4a" };
-const CUT = { setar: [1800, 3200, 6000, 20000], santur: [2200, 4200, 8000, 20000] };   // softer strokes are darker
+const FILES = { piano: "snd/piano.m4a", santur: "snd/santur.m4a" };
+const CUT = { piano: [1500, 2800, 5200, 20000], santur: [2200, 4200, 8000, 20000] };   // softer strokes are darker
 const insts = Object.keys(FILES).filter((k) => NOTES[k]);
 const asked = new URLSearchParams(location.search).get("sound");
-let inst = insts.includes(asked) ? asked : insts.includes("setar") ? "setar" : insts[0];
+let inst = insts.includes(asked) ? asked : insts.includes("piano") ? "piano" : insts[0];
 const banks = {};
 function bank(name) {
   if (!banks[name]) {
@@ -287,9 +287,6 @@ function showInst() {
     el.style.display = insts.includes(el.dataset.inst) ? "" : "none";
     el.setAttribute("aria-pressed", String(el.dataset.inst === inst));
   }
-  const hasSetar = insts.includes("setar");
-  $("about-setar").style.display = hasSetar ? "" : "none";
-  $("credit-setar").style.display = hasSetar ? "" : "none";
 }
 showInst();
 for (const el of instBtns) {

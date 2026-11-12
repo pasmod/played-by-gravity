@@ -7,7 +7,7 @@ note at its collision.
 **Open the app: https://pasmod.github.io/shur-in-g/**
 
 Drop the balls, drag to look around, pinch or scroll to zoom, tap a tile to play it, slow the fall down,
-jump between the parts, switch between setar and santur, choose a piece. On a phone it can be added to the
+jump between the parts, switch between Persian piano and santur, choose a piece. On a phone it can be added to the
 home screen and then works without a connection.
 
 ## The pieces
@@ -32,10 +32,9 @@ home screen and then works without a connection.
   Seán O'Leary and James McDermott, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), transcribed
   after Dariush Talai's notation of the radif of Mirzā Abdollāh. Changes here: a speed was chosen, long notes
   became tremolos, breaths were added between phrases.
-- Setar (`snd/setar.m4a`): single plucks of a real setar recorded fret by fret by
-  [Jacqke](https://commons.wikimedia.org/wiki/User:Jacqke), published on Wikimedia Commons under
-  [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). The file here is an adaptation (one pluck
-  per fret, three high notes raised in pitch) and is offered under the same licence.
+- Piano (`snd/piano.m4a`): notes of the [Salamander Grand Piano](https://github.com/Tonejs/audio/tree/master/salamander)
+  by Alexander Holm, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), each retuned here to the pitch
+  it needs, so the koron notes sit about a quarter tone low (a "Persian piano").
 - Santur (`snd/santur.m4a`): computed by a model, no samples.
 
 The "About" sheet in the app explains how it works.

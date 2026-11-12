@@ -1,14 +1,14 @@
 // Shur in g — keeps the app working without a connection once it has been opened.
 // The page and its code are fetched fresh whenever there is a connection (cache as fallback);
 // sounds, fonts and the 3D library are answered from the cache.
-const V = "shur-in-g-v3";
+const V = "shur-in-g-v4";
 const CORE = [
   "./", "index.html", "app.js", "player.js", "manifest.webmanifest",
   "pieces/shur/scene.js", "pieces/shur/notes.js",
   "pieces/esfahan-daramad/scene.js", "pieces/esfahan-daramad/notes.js",
   "pieces/esfahan-jamehdaran/scene.js", "pieces/esfahan-jamehdaran/notes.js",
   "pieces/esfahan-suzogodaz/scene.js", "pieces/esfahan-suzogodaz/notes.js",
-  "snd/setar.m4a", "snd/santur.m4a",
+  "snd/piano.m4a", "snd/santur.m4a",
   "fonts/Cormorant.woff2", "fonts/Cormorant-Italic.woff2", "fonts/Vazirmatn.woff2",
   "icons/icon.svg", "icons/icon-192.png",
 ];
