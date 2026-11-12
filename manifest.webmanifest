@@ -1,7 +1,7 @@
 {
-  "name": "Shur in g",
-  "short_name": "Shur in g",
-  "description": "An original piece in Dastgāh-e Shur, played by gravity. Drop the balls, tap the tiles, look around.",
+  "name": "Sari Galin, played by gravity",
+  "short_name": "Sari Galin",
+  "description": "The old folk song Sari Galin, played on a santur by nothing but falling. Drop the balls, tap the tiles, look around.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

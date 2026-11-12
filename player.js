@@ -26,14 +26,14 @@ document.querySelector("#home h1").innerHTML = titleHtml;
 document.querySelector("#hud-title .t").innerHTML = titleHtml;
 document.querySelector("#about h2").innerHTML = titleHtml;
 document.querySelectorAll('.fa[lang="fa"]').forEach((el) => (el.textContent = S.fa));
-document.title = `${S.name}: Persian music played by gravity`;
+document.title = `${S.name}, played by gravity`;
 $("done-name").textContent = `That was ${S.name}.`;
 document.querySelectorAll("[data-kind]").forEach((el) => (el.style.display = el.dataset.kind === S.kind ? "" : "none"));
 function pieceLink(p, withSub) {
   const a = document.createElement("a");
   a.className = "piece";
   const q = new URLSearchParams(location.search);
-  if (p.id === "shur") q.delete("piece");
+  if (p.id === window.PIECES[0].id) q.delete("piece");
   else q.set("piece", p.id);
   a.href = `./${q.toString() ? "?" + q.toString() : ""}`;
   a.innerHTML = withSub ? `<span>${p.name}</span><small>${p.sub}</small>` : p.name;
@@ -45,6 +45,7 @@ for (const p of window.PIECES) {
   $("menu").appendChild(pieceLink(p, true));
 }
 $("piece-chip").addEventListener("click", () => $("menu").classList.toggle("open"));
+if (window.PIECES.length < 2) for (const id of ["pieces", "piece-chip", "menu"]) $(id).style.display = "none";   // one piece: nothing to choose
 
 // ---------------------------------------------------------------- facts in the text
 const ys = S.pads.map((p) => p.c[1]);
@@ -54,11 +55,11 @@ document.querySelectorAll(".n-score").forEach((el) => (el.textContent = S.n_scor
 document.querySelectorAll(".n-drop").forEach((el) => (el.textContent = `${drop} m`));
 
 // ---------------------------------------------------------------- the sound: one note per collision
-const FILES = { piano: "snd/piano.m4a", santur: "snd/santur.m4a" };
+const FILES = { santur: "snd/santur.m4a" };
 const CUT = { piano: [1500, 2800, 5200, 20000], santur: [2200, 4200, 8000, 20000] };   // softer strokes are darker
 const insts = Object.keys(FILES).filter((k) => NOTES[k]);
 const asked = new URLSearchParams(location.search).get("sound");
-let inst = insts.includes(asked) ? asked : insts.includes("piano") ? "piano" : insts[0];
+let inst = insts.includes(asked) ? asked : insts[0];
 const banks = {};
 function bank(name) {
   if (!banks[name]) {
@@ -447,7 +448,7 @@ $("scale").addEventListener("click", (e) => {
   el.animate([{ transform: "translateY(-4px)" }, { transform: "none" }], { duration: 260, easing: "ease-out" });
 });
 
-// chapters: the four parts of the piece, as one line you can touch
+// chapters: the parts of the piece, as one line you can touch
 const chapters = $("chapters");
 const bounds = [0, ...S.sections.slice(1).map((s) => s.t), DUR];
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI"];

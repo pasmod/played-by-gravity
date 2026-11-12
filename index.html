@@ -3,15 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <title>Shur in g: a Persian piece played by gravity</title>
+    <title>Sari Galin, played by gravity</title>
     <meta
       name="description"
-      content="Drop two balls and let gravity play an original piece in Dastgāh-e Shur. Tap the tiles, look around, slow it down, change the instrument."
+      content="Drop two balls and let gravity play Sari Galin, the old folk song, on a santur. Tap the tiles, look around, slow it down."
     />
-    <meta property="og:title" content="Shur in g" />
+    <meta property="og:title" content="Sari Galin, played by gravity" />
     <meta
       property="og:description"
-      content="An original piece in Dastgāh-e Shur, played by gravity. Drop the balls, tap the tiles, look around."
+      content="The old folk song Sari Galin, played on a santur by nothing but falling. Drop the balls, tap the tiles, look around."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://pasmod.github.io/shur-in-g/" />
@@ -23,7 +23,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Shur in g" />
+    <meta name="apple-mobile-web-app-title" content="Sari Galin" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon-180.png" />
@@ -644,22 +644,16 @@
       </header>
 
       <section id="home" class="center">
-        <h1>SHUR IN <i>g</i></h1>
-        <div class="fa" dir="rtl" lang="fa">دستگاه شور، با مضرابِ جاذبه</div>
+        <h1>SARI GALIN</h1>
+        <div class="fa" dir="rtl" lang="fa">ساری گلین، با مضرابِ جاذبه</div>
         <div class="line">Two balls, a long fall, and every landing is a note.</div>
         <button id="drop" class="primary" type="button">DROP THE BALLS</button>
-        <div class="row">
-          <div class="seg" role="group" aria-label="Instrument">
-            <button type="button" data-inst="piano" aria-pressed="false">PIANO</button
-            ><button type="button" data-inst="santur" aria-pressed="false">SANTUR</button>
-          </div>
-        </div>
         <div id="pieces" class="row wrap" role="group" aria-label="Piece"></div>
         <button class="link" type="button" data-about>HOW IT WORKS</button>
       </section>
 
       <div id="done" class="center">
-        <div class="line"><span id="done-name">That was Shur in g.</span> The tiles stay: tap them, or let it fall again.</div>
+        <div class="line"><span id="done-name">That was Sari Galin.</span> The tiles stay: tap them, or let it fall again.</div>
         <button id="again" class="primary" type="button">DROP AGAIN</button>
       </div>
       <div id="toast" class="center"></div>
@@ -672,10 +666,6 @@
       <nav id="dock">
         <div id="scale" aria-label="The notes of the mode. Tap one to hear it."></div>
         <div id="chips">
-          <div class="seg" role="group" aria-label="Instrument">
-            <button type="button" data-inst="piano" aria-pressed="false">PIANO</button
-            ><button type="button" data-inst="santur" aria-pressed="false">SANTUR</button>
-          </div>
           <button id="piece-chip" class="chip" type="button" aria-label="Choose a piece">PIECES</button>
           <button id="speed" class="chip" type="button" aria-label="Speed">1×</button>
           <button id="cam" class="chip" type="button" aria-pressed="true">FOLLOW</button>
@@ -695,10 +685,10 @@
             <path d="M1 0L5 4 9 0l1 1-4 4 4 4-1 1-4-4-4 4-1-1 4-4-4-4z" />
           </svg>
         </button>
-        <h2>SHUR IN <i>g</i></h2>
+        <h2>SARI GALIN</h2>
         <p class="sub">
-          An original piece of Persian music, played by nothing but falling.
-          <span class="fa" dir="rtl" lang="fa">دستگاه شور، با مضرابِ جاذبه</span>
+          An old folk song, played on a santur by nothing but falling.
+          <span class="fa" dir="rtl" lang="fa">ساری گلین، با مضرابِ جاذبه</span>
         </p>
         <div class="facts">
           <div><b class="n-score">428</b><span>notes in the score</span></div>
@@ -711,8 +701,8 @@
         <p>
           Drop the balls and watch, or take over: drag to look around, pinch or scroll to come closer, and tap any
           tile, or a note name at the bottom, to play it yourself. You can slow the fall down without the notes
-          going out of tune, jump between the four parts, and change the instrument while it plays. On a phone you
-          can add this page to your home screen; it then opens like an app and also works without a connection.
+          going out of tune, and jump to any place in the song. On a phone you can add this page to your home
+          screen; it then opens like an app and also works without a connection.
         </p>
 
         <h3>What you are watching</h3>
@@ -726,43 +716,22 @@
           hear is triggered at the moment of its collision.
         </p>
 
-        <h3>The piece</h3>
-        <div data-kind="original">
-          <p>
-            “Shur in g” is an original piece in Dastgāh-e Shur, one of the seven modal systems of Persian classical
-            music, here built on the note G. It has four parts. The Darāmad, the opening, is free in rhythm and
-            circles the home note. The Chahārmezrāb is fast, in 6/8, over a G that keeps returning. The Owj, the
-            peak, climbs into the high octave. The Forud brings everything back down to G.
-          </p>
-          <p>
-            Shur uses two notes a piano does not have: A koron and D koron, each about a quarter tone lower than A
-            and D. Their tiles stand exactly where the pitch puts them, between their neighbours.
-          </p>
-          <p>
-            A struck or plucked string cannot be held, so long notes are played as a tremolo, called riz: the two
-            balls take turns on the same pitch. Where a phrase ends, the balls land on soft bars, bounce a few times
-            and lie still. That is the silence between phrases. Then they roll off the end and fall into the next
-            one.
-          </p>
-        </div>
-        <div data-kind="radif">
-          <p>
-            This is a gusheh, one of the short traditional pieces of the radif, the repertoire through which Persian
-            classical music is taught and handed down. It belongs to Bayāt-e Esfahān. Its home note here is G, the
-            F sharp just below leans into it, and its E is a koron, about a quarter tone low. That mixture gives the
-            mode its bittersweet colour.
-          </p>
-          <p>
-            The notes are those of the radif of Mirzā Abdollāh (1843–1918), as written down by Dariush Talai and
-            entered note by note into the Radif Corpus. Every note of that transcription is played here, in its
-            order and its proportion. The longest notes are played as a tremolo, called riz, the way a
-            santur player holds a note, and a short breath separates the phrases.
-          </p>
-          <p>
-            The radif has no beat. Its notes have fixed proportions, but how fast they go is the player's choice;
-            here it is ours.
-          </p>
-        </div>
+        <h3>The song</h3>
+        <p>
+          “Sari Galin” is one of the best-loved old songs of Iran, the Caucasus and eastern Anatolia. It is sung
+          in Azerbaijani, Armenian, Turkish and Persian, each with its own words; in Persian it is also known as
+          “Dāman-keshān”. Nobody knows who wrote it. It is a song of longing for a beloved who cannot be reached.
+        </p>
+        <p>
+          You hear its melody twice: first plainly, then an octave higher. The notes are those of the melody as
+          it was written down in a file on Wikimedia Commons; every one of them is played, in its order and its
+          rhythm. The song is in three-four time, and its home note is D.
+        </p>
+        <p>
+          A struck string cannot be held, so the long notes are played as a tremolo, called riz: the two balls take
+          turns on the same pitch, as the two hammers of a santur player do. The last notes of a phrase broaden a
+          little, and a short breath separates the phrases.
+        </p>
 
         <h3>How it was built</h3>
         <p>
@@ -782,39 +751,26 @@
           A ball that falls further lands faster, and a faster landing is a louder note. So the loudness of the piece
           is written into the shape of the fall. Where the music grows, the staircase gets steeper, and an accent is a
           deeper drop into one note. A pause costs height too, because a ball that stays in the air longer comes down
-          harder.
+          harder. That is also why the two balls share the work as they do: the ball that has waited longest
+          lands hardest, so it is given the notes on the beat, and the quick notes in between go to the ball that
+          has just landed.
         </p>
 
-        <h3>The two instruments</h3>
+        <h3>The instrument</h3>
         <p>
-          The piano is the Persian piano: a grand piano tuned for this music, with the koron notes about a quarter
-          tone low, in the tradition of Mortezā Mahjubi. Its notes here are recordings of a real grand piano, each
-          retuned to the pitch it needs. Striking a key again stops its earlier sound; everything else rings on,
-          as with the pedal held.
-        </p>
-        <p>
-          The santur is the Persian hammered dulcimer; there the two balls are its two mezrabs, the light wooden
+          The santur is the Persian hammered dulcimer; the two balls are its two mezrabs, the light wooden
           hammers. Its sound is not a recording but a computed model of a course of four strings.
         </p>
 
         <p class="small">
-          <span data-kind="original">Composed, simulated and drawn in code by Claude (Opus 5.5 and Fable 5.2), 2026.</span>
-          <span data-kind="radif"
-            >Simulated and drawn in code by Claude (Opus 5.5 and Fable 5.2), 2026. Notes:
-            <a href="https://doi.org/10.5281/zenodo.15742125" target="_blank" rel="noopener">Radif Corpus</a> by Maziar
-            Kanani, Seán O’Leary and James McDermott, licensed
-            <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>,
-            transcribed after Dariush Talai’s notation of the radif of Mirzā Abdollāh; set to a speed and with
-            tremolos here.</span
+          Simulated and drawn in code by Claude (Opus 5.5 and Fable 5.2), 2026. Melody: traditional. Notes: the
+          file
+          <a href="https://commons.wikimedia.org/wiki/File:Sari_Gelin.mid" target="_blank" rel="noopener"
+            >Sari Gelin.mid</a
           >
-          The idea of letting gravity play a piece of music comes from a “Sonata in g” posted by @imjustnewatai.
-          Piano notes:
-          <a href="https://github.com/Tonejs/audio/tree/master/salamander" target="_blank" rel="noopener"
-            >Salamander Grand Piano</a
-          >
-          by Alexander Holm, licensed
-          <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>,
-          retuned here note by note.
+          on Wikimedia Commons by Peter Gerloff (Rabanus Flavus), released into the public domain (CC0); set to a
+          speed, with tremolos and in two octaves here. The idea of letting gravity play a piece of music comes
+          from a “Sonata in g” posted by @imjustnewatai.
           Typefaces: Cormorant Garamond and Vazirmatn, SIL Open Font License.
         </p>
       </aside>
@@ -822,15 +778,10 @@
 
     <script>
       // the pieces of the app; ?piece=… chooses one, each has its own physics run and note plan
-      window.PIECES = [
-        { id: "shur", name: "Shur in g", sub: "an original piece" },
-        { id: "esfahan-daramad", name: "Esfahan · Darāmad", sub: "from the radif" },
-        { id: "esfahan-jamehdaran", name: "Esfahan · Jāmeh-darān", sub: "from the radif" },
-        { id: "esfahan-suzogodaz", name: "Esfahan · Suz-o Godāz", sub: "from the radif" },
-      ];
+      window.PIECES = [{ id: "sari-galin", name: "Sari Galin", sub: "a folk song" }];
       (function () {
         var want = new URLSearchParams(location.search).get("piece");
-        var id = window.PIECES.some(function (p) { return p.id === want; }) ? want : "shur";
+        var id = window.PIECES.some(function (p) { return p.id === want; }) ? want : window.PIECES[0].id;
         window.PIECE_ID = id;
         document.write('<script src="pieces/' + id + '/scene.js"><\/script><script src="pieces/' + id + '/notes.js"><\/script>');
       })();

@@ -53,13 +53,13 @@ const LOOKS = {
 };
 const L = LOOKS[THEME];
 const pcOf = (name) => name.replace(/[0-9]/g, "");
-// the notes of the mode, in order above the home note G, each with its colour
+// the notes of the mode, in order above the home note of the piece, each with its colour
 const PCS = [];
 {
   const seen = {};
   for (const l of S.lanes) {
     const pc = pcOf(l.name);
-    if (!(pc in seen)) seen[pc] = ((l.cents % 1200) + 1200) % 1200;
+    if (!(pc in seen)) seen[pc] = (((l.cents - (S.home || 0)) % 1200) + 1200) % 1200;
   }
   PCS.push(...Object.keys(seen).sort((a, b) => seen[a] - seen[b]));
 }
