@@ -3,15 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <title>Sari Galin, played by gravity</title>
+    <title>Santur, played by gravity</title>
     <meta
       name="description"
-      content="Drop two balls and let gravity play Sari Galin, the old folk song, on a santur. Tap the tiles, look around, slow it down."
+      content="Drop two balls and let gravity play Persian classical music on a santur. Three pieces to choose from. Tap the tiles, look around, slow it down."
     />
-    <meta property="og:title" content="Sari Galin, played by gravity" />
+    <meta property="og:title" content="Santur, played by gravity" />
     <meta
       property="og:description"
-      content="The old folk song Sari Galin, played on a santur by nothing but falling. Drop the balls, tap the tiles, look around."
+      content="Persian classical music, played on a santur by nothing but falling. Drop the balls, tap the tiles, look around."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://pasmod.github.io/shur-in-g/" />
@@ -23,7 +23,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Sari Galin" />
+    <meta name="apple-mobile-web-app-title" content="Santur" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon-180.png" />
@@ -644,8 +644,8 @@
       </header>
 
       <section id="home" class="center">
-        <h1>SARI GALIN</h1>
-        <div class="fa" dir="rtl" lang="fa">ساری گلین، با مضرابِ جاذبه</div>
+        <h1>CHAHARMEZRAB</h1>
+        <div class="fa" dir="rtl" lang="fa">چهارمضراب ماهور</div>
         <div class="line">Two balls, a long fall, and every landing is a note.</div>
         <button id="drop" class="primary" type="button">DROP THE BALLS</button>
         <div id="pieces" class="row wrap" role="group" aria-label="Piece"></div>
@@ -653,7 +653,7 @@
       </section>
 
       <div id="done" class="center">
-        <div class="line"><span id="done-name">That was Sari Galin.</span> The tiles stay: tap them, or let it fall again.</div>
+        <div class="line"><span id="done-name">That was the piece.</span> The tiles stay: tap them, or let it fall again.</div>
         <button id="again" class="primary" type="button">DROP AGAIN</button>
       </div>
       <div id="toast" class="center"></div>
@@ -685,10 +685,10 @@
             <path d="M1 0L5 4 9 0l1 1-4 4 4 4-1 1-4-4-4 4-1-1 4-4-4-4z" />
           </svg>
         </button>
-        <h2>SARI GALIN</h2>
+        <h2>CHAHARMEZRAB</h2>
         <p class="sub">
-          An old folk song, played on a santur by nothing but falling.
-          <span class="fa" dir="rtl" lang="fa">ساری گلین، با مضرابِ جاذبه</span>
+          Persian classical music, played on a santur by nothing but falling.
+          <span class="fa" dir="rtl" lang="fa">چهارمضراب ماهور</span>
         </p>
         <div class="facts">
           <div><b class="n-score">428</b><span>notes in the score</span></div>
@@ -701,14 +701,17 @@
         <p>
           Drop the balls and watch, or take over: drag to look around, pinch or scroll to come closer, and tap any
           tile, or a note name at the bottom, to play it yourself. You can slow the fall down without the notes
-          going out of tune, and jump to any place in the song. On a phone you can add this page to your home
-          screen; it then opens like an app and also works without a connection.
+          going out of tune, and jump to any place in the piece. There are three pieces to choose from. On a phone
+          you can add this page to your home screen; it then opens like an app and also works without a
+          connection.
         </p>
 
         <h3>What you are watching</h3>
         <p>
           Two balls are let go at the top of a long fall. Every tile they land on is a note. Where a tile stands from
-          left to right is its pitch, and how hard the ball lands on it is how loud the note sounds.
+          left to right is its pitch, and how hard the ball lands on it is how loud the note sounds. Only a low
+          drone string far below the melody stands closer than its pitch would put it, so that a ball can reach
+          it in time.
         </p>
         <p>
           The balls are never moved by hand. A physics simulation with ordinary gravity, 9.81 m/s², carries them from
@@ -716,21 +719,19 @@
           hear is triggered at the moment of its collision.
         </p>
 
-        <h3>The song</h3>
+        <h3>The piece</h3>
+        <p id="piece-text"></p>
         <p>
-          “Sari Galin” is one of the best-loved old songs of Iran, the Caucasus and eastern Anatolia. It is sung
-          in Azerbaijani, Armenian, Turkish and Persian, each with its own words; in Persian it is also known as
-          “Dāman-keshān”. Nobody knows who wrote it. It is a song of longing for a beloved who cannot be reached.
+          It is a gusheh, one of the short traditional pieces of the radif, the repertoire through which Persian
+          classical music is taught and handed down. The notes are those of the radif of Mirzā Abdollāh
+          (1843–1918), as written down by Dariush Talai and entered note by note into the Radif Corpus. Every note
+          of that transcription is played here, in its order and its length; only the speed is our choice. The
+          koron notes, about a quarter tone low and not found on a piano, have tiles of their own between their
+          neighbours.
         </p>
         <p>
-          You hear its melody twice: first plainly, then an octave higher. The notes are those of the melody as
-          it was written down in a file on Wikimedia Commons; every one of them is played, in its order and its
-          rhythm. The song is in three-four time, and its home note is D.
-        </p>
-        <p>
-          A struck string cannot be held, so the long notes are played as a tremolo, called riz: the two balls take
-          turns on the same pitch, as the two hammers of a santur player do. The last notes of a phrase broaden a
-          little, and a short breath separates the phrases.
+          A struck string cannot be held, so the longest notes are played as a tremolo, called riz: the two balls
+          take turns on the same pitch, as the two hammers of a santur player do.
         </p>
 
         <h3>How it was built</h3>
@@ -752,8 +753,8 @@
           is written into the shape of the fall. Where the music grows, the staircase gets steeper, and an accent is a
           deeper drop into one note. A pause costs height too, because a ball that stays in the air longer comes down
           harder. That is also why the two balls share the work as they do: the ball that has waited longest
-          lands hardest, so it is given the notes on the beat, and the quick notes in between go to the ball that
-          has just landed.
+          lands hardest, so it is given the long notes, and the quick notes in between go to the ball that has
+          just landed.
         </p>
 
         <h3>The instrument</h3>
@@ -763,14 +764,13 @@
         </p>
 
         <p class="small">
-          Simulated and drawn in code by Claude (Opus 5.5 and Fable 5.2), 2026. Melody: traditional. Notes: the
-          file
-          <a href="https://commons.wikimedia.org/wiki/File:Sari_Gelin.mid" target="_blank" rel="noopener"
-            >Sari Gelin.mid</a
-          >
-          on Wikimedia Commons by Peter Gerloff (Rabanus Flavus), released into the public domain (CC0); set to a
-          speed, with tremolos and in two octaves here. The idea of letting gravity play a piece of music comes
-          from a “Sonata in g” posted by @imjustnewatai.
+          Simulated and drawn in code by Claude (Opus 5.5 and Fable 5.2), 2026. Notes:
+          <a href="https://doi.org/10.5281/zenodo.15742125" target="_blank" rel="noopener">Radif Corpus</a> by Maziar
+          Kanani, Seán O’Leary and James McDermott, licensed
+          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>,
+          transcribed after Dariush Talai’s notation of the radif of Mirzā Abdollāh; set to a speed and with
+          tremolos here. The idea of letting gravity play a piece of music comes from a “Sonata in g” posted by
+          @imjustnewatai.
           Typefaces: Cormorant Garamond and Vazirmatn, SIL Open Font License.
         </p>
       </aside>
@@ -778,7 +778,26 @@
 
     <script>
       // the pieces of the app; ?piece=… chooses one, each has its own physics run and note plan
-      window.PIECES = [{ id: "sari-galin", name: "Sari Galin", sub: "a folk song" }];
+      window.PIECES = [
+        {
+          id: "mahur-chaharmezrab",
+          name: "Chahārmezrāb",
+          sub: "Māhur · bright and fast",
+          text: "A chahārmezrāb, “four strokes”, is the showpiece form of Persian music: a fast, steady pulse in which a low drone string keeps returning under the melody. This one is in Māhur, the brightest of the modes, close to a major scale. Watch how one ball keeps coming back to the low string while the other carries the tune, like the two hammers of a santur player.",
+        },
+        {
+          id: "chahargah-zang",
+          name: "Zang-e Shotor",
+          sub: "Chahārgāh · the camel’s bell",
+          text: "Zang-e Shotor means “the camel’s bell”: a long ringing note, a low stroke, another long note, in the swaying step of a caravan. It is in Chahārgāh, a mode with two koron notes, which give it its far-away colour.",
+        },
+        {
+          id: "mahur-kereshmeh",
+          name: "Kereshmeh",
+          sub: "Māhur · a lilting rhythm",
+          text: "Kereshmeh means a coquettish glance. It is less a melody of its own than a rhythm, short and long notes in a lilting turn, that can be played through any mode; here through Māhur, close to a major scale.",
+        },
+      ];
       (function () {
         var want = new URLSearchParams(location.search).get("piece");
         var id = window.PIECES.some(function (p) { return p.id === want; }) ? want : window.PIECES[0].id;

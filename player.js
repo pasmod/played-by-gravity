@@ -25,9 +25,24 @@ const titleHtml = S.title.replace(/ g$/, " <i>g</i>");
 document.querySelector("#home h1").innerHTML = titleHtml;
 document.querySelector("#hud-title .t").innerHTML = titleHtml;
 document.querySelector("#about h2").innerHTML = titleHtml;
+// a long title is set smaller, so that it fits the width of the screen
+function fitTitle() {
+  const el = document.querySelector("#home h1");
+  el.style.fontSize = "";
+  el.style.whiteSpace = "nowrap";
+  const room = document.documentElement.clientWidth - 32;
+  const probe = document.createRange();
+  probe.selectNodeContents(el);
+  const w = probe.getBoundingClientRect().width;
+  if (w > room) el.style.fontSize = `${Math.max(16, (parseFloat(getComputedStyle(el).fontSize) * room) / w)}px`;
+}
+fitTitle();
+addEventListener("resize", fitTitle);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTitle);
 document.querySelectorAll('.fa[lang="fa"]').forEach((el) => (el.textContent = S.fa));
 document.title = `${S.name}, played by gravity`;
 $("done-name").textContent = `That was ${S.name}.`;
+$("piece-text").textContent = (window.PIECES.find((p) => p.id === window.PIECE_ID) || {}).text || "";
 document.querySelectorAll("[data-kind]").forEach((el) => (el.style.display = el.dataset.kind === S.kind ? "" : "none"));
 function pieceLink(p, withSub) {
   const a = document.createElement("a");
@@ -457,7 +472,9 @@ const chaps = S.sections.map((s, i) => {
   const el = document.createElement("div");
   el.className = "chap";
   el.style.flex = `${bounds[i + 1] - bounds[i]} 1 0`;
-  el.innerHTML = `<div class="name">${ROMAN[i]}${named ? `<span class="long"> · ${s.en}</span>` : ""}</div><div class="line"><span></span></div>`;
+  // many short parts: their numbers would run into each other, so only the line is drawn
+  const no = S.sections.length > 8 ? "&nbsp;" : ROMAN[i] || "";
+  el.innerHTML = `<div class="name">${no}${named ? `<span class="long"> · ${s.en}</span>` : ""}</div><div class="line"><span></span></div>`;
   chapters.appendChild(el);
   return { el, fill: el.querySelector(".line span") };
 });
