@@ -53,7 +53,20 @@ const LOOKS = {
 };
 const L = LOOKS[THEME];
 const pcOf = (name) => name.replace(/[0-9]/g, "");
-const laneColor = S.lanes.map((l) => new THREE.Color(L.pc[pcOf(l.name)]));
+// the notes of the mode, in order above the home note G, each with its colour
+const PCS = [];
+{
+  const seen = {};
+  for (const l of S.lanes) {
+    const pc = pcOf(l.name);
+    if (!(pc in seen)) seen[pc] = ((l.cents % 1200) + 1200) % 1200;
+  }
+  PCS.push(...Object.keys(seen).sort((a, b) => seen[a] - seen[b]));
+}
+const PALETTE = Object.values(L.pc);
+const PC_COLOR = {};
+PCS.forEach((pc, i) => (PC_COLOR[pc] = PALETTE[i % PALETTE.length]));
+const laneColor = S.lanes.map((l) => new THREE.Color(PC_COLOR[pcOf(l.name)]));
 
 // ---------------------------------------------------------------- data helpers
 function lastLE(arr, t) {
@@ -351,7 +364,7 @@ S.ramps.forEach((r, b) => {
   const nr = new THREE.Vector3(0, Math.cos(th), Math.sin(th));
   const len = r.length + 0.05;
   const geo = new RoundedBoxGeometry(BW, BT, len, 2, 0.0015);
-  const lane = S.pads.find((p) => p.b === b && p.k === "s").l;
+  const lane = (S.pads.find((p) => p.b === b && p.k === "s") || S.pads.find((p) => p.b === b)).l;
   const mat = barMaterial(lane);
   const m = new THREE.Mesh(geo, mat);
   const top = new THREE.Vector3(...r.top);
@@ -629,19 +642,21 @@ function target(t, out) {
   return c.span;
 }
 // keyframes: t, azimuth (deg, 0 = behind the balls), elevation (deg), frame height (in spans), look-ahead (spans)
-const [tD, tC, tO, tF] = SEC;
+// the camera's course is laid out over the length of the piece, whatever its parts are
+const T_FIRST = S.t0;
+const at = (u) => T_FIRST + u * (T_LAST - T_FIRST);
 // keyframes: t, azimuth (deg, 0 = up the slope behind the balls), elevation above the slope (deg),
 // frame height (in spans), look-ahead (spans), lift of the look point (spans)
 const RIGS = {
   gonbad: [
-    [0, 38, 12, 3.1, 0, 1.3], [T_REL - 0.4, 34, 13, 2.9, 0, 1.15], [tD + 0.6, 26, 18, 1.71, 0.1, 0.1],
-    [tD + 4, 18, 23, 1.57, 0.3, 0], [tD + 14, -20, 24, 1.62, 0.35, 0],
-    [tC - 6, -68, 15, 1.57, 0.2, 0], [tC + 4, -134, 17, 1.62, 0.3, 0], [tC + 13, -180, 19, 1.67, 0.4, 0.1],
-    [tO - 5, -214, 17, 1.62, 0.35, 0], [tO + 2.5, -296, 24, 1.75, 0.35, 0], [tO + 9, -350, 30, 1.84, 0.4, 0],
-    [tF + 1.5, -386, 22, 1.62, 0.3, 0], [T_LAST, -400, 17, 1.44, 0.2, 0],
+    [0, 38, 12, 3.1, 0, 1.3], [T_REL - 0.4, 34, 13, 2.9, 0, 1.15], [T_FIRST + 0.6, 26, 18, 1.71, 0.1, 0.1],
+    [at(0.045), 18, 23, 1.57, 0.3, 0], [at(0.17), -20, 24, 1.62, 0.35, 0],
+    [at(0.33), -68, 15, 1.57, 0.2, 0], [at(0.45), -134, 17, 1.62, 0.3, 0], [at(0.565), -180, 19, 1.67, 0.4, 0.1],
+    [at(0.645), -214, 17, 1.62, 0.35, 0], [at(0.74), -296, 24, 1.75, 0.35, 0], [at(0.82), -350, 30, 1.84, 0.4, 0],
+    [at(0.92), -386, 22, 1.62, 0.3, 0], [T_LAST, -400, 17, 1.44, 0.2, 0],
   ],
   negar: [[0, -62, 20, 1.45, 0, 0], [S.t_end, -62, 20, 1.45, 0, 0]],
-  divar: [[0, 34, 38, 1.55, 0.25, 0], [tC, 24, 42, 1.6, 0.3, 0], [tO, 14, 46, 1.7, 0.3, 0], [S.t_end, 30, 38, 1.55, 0.25, 0]],
+  divar: [[0, 34, 38, 1.55, 0.25, 0], [at(0.4), 24, 42, 1.6, 0.3, 0], [at(0.7), 14, 46, 1.7, 0.3, 0], [S.t_end, 30, 38, 1.55, 0.25, 0]],
 };
 const camPos = new THREE.Vector3();
 const camLook = new THREE.Vector3();
@@ -729,15 +744,22 @@ function renderCamera(t) {
 }
 
 // ---------------------------------------------------------------- HUD
-const PCS = ["G", "Ak", "Bb", "C", "Dk", "D", "Eb", "F"];
-const PC_LABEL = { G: "G", Ak: "A<small data-layout-ignore>koron</small>", Bb: "B♭", C: "C", Dk: "D<small data-layout-ignore>koron</small>", D: "D", Eb: "E♭", F: "F" };
+const SMALL = { k: "koron", s: "sori" };
+function pcLabel(pc) {
+  const m = pc.match(/^([A-G])(b|#|k|s)?$/);
+  if (!m) return pc;
+  if (m[2] === "b") return `${m[1]}♭`;
+  if (m[2] === "#") return `${m[1]}♯`;
+  if (m[2]) return `${m[1]}<small data-layout-ignore>${SMALL[m[2]]}</small>`;
+  return m[1];
+}
 const scaleEl = document.getElementById("scale");
 const noteEls = {};
 for (const pc of PCS) {
   const el = document.createElement("div");
   el.className = "note";
   el.dataset.pc = pc;
-  el.innerHTML = `<span class="lamp"></span><span class="nm">${PC_LABEL[pc]}</span>`;
+  el.innerHTML = `<span class="lamp"></span><span class="nm">${pcLabel(pc)}</span>`;
   scaleEl.appendChild(el);
   noteEls[pc] = el;
 }
@@ -745,7 +767,7 @@ const countEl = document.getElementById("count");
 const secEn = document.getElementById("sec-en");
 const secFa = document.getElementById("sec-fa");
 const secNo = document.getElementById("sec-no");
-const ROMAN = ["I", "II", "III", "IV"];
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI"];
 const INK = L.dark ? "236,230,214" : "42,32,24";
 
 // ---------------------------------------------------------------- one frame
@@ -906,9 +928,9 @@ function renderAt(t) {
   for (const pc of PCS) {
     const f = flash[pc] || 0;
     const el = noteEls[pc];
-    el.style.color = f > 0.03 ? L.pc[pc] : `rgba(${INK},0.62)`;
-    el.firstChild.style.background = f > 0.03 ? L.pc[pc] : `rgba(${INK},0.22)`;
-    el.firstChild.style.boxShadow = f > 0.03 && L.dark ? `0 0 ${Math.round(22 * f)}px ${L.pc[pc]}` : "none";
+    el.style.color = f > 0.03 ? PC_COLOR[pc] : `rgba(${INK},0.62)`;
+    el.firstChild.style.background = f > 0.03 ? PC_COLOR[pc] : `rgba(${INK},0.22)`;
+    el.firstChild.style.boxShadow = f > 0.03 && L.dark ? `0 0 ${Math.round(22 * f)}px ${PC_COLOR[pc]}` : "none";
     el.firstChild.style.transform = `scaleX(${(1 + 1.6 * f).toFixed(3)})`;
   }
 

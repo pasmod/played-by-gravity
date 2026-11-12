@@ -420,6 +420,62 @@
         gap: 10px;
         pointer-events: auto;
       }
+      #home .wrap {
+        flex-wrap: wrap;
+        gap: 8px;
+        max-width: 760px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .piece {
+        height: 40px;
+        padding: 0 16px;
+        border: 1px solid var(--faint);
+        border-radius: 999px;
+        background: var(--panel);
+        font-size: clamp(14px, 1.05vw, 17px);
+        letter-spacing: 0.06em;
+        color: var(--dim);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+      .piece[aria-current="true"] {
+        color: var(--ink);
+        border-color: var(--ink);
+      }
+      #menu {
+        position: absolute;
+        left: 50%;
+        bottom: clamp(150px, 22vh, 210px);
+        transform: translateX(-50%);
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        padding: 14px;
+        border: 1px solid var(--faint);
+        border-radius: 22px;
+        background: var(--panel);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        z-index: 4;
+      }
+      #menu.open {
+        display: flex;
+      }
+      #menu .piece {
+        justify-content: space-between;
+        gap: 18px;
+        white-space: nowrap;
+        background: none;
+      }
+      #menu .piece small {
+        font-style: italic;
+        letter-spacing: 0;
+        opacity: 0.7;
+      }
       .link {
         pointer-events: auto;
         margin-top: 16px;
@@ -598,11 +654,12 @@
             ><button type="button" data-inst="santur" aria-pressed="false">SANTUR</button>
           </div>
         </div>
+        <div id="pieces" class="row wrap" role="group" aria-label="Piece"></div>
         <button class="link" type="button" data-about>HOW IT WORKS</button>
       </section>
 
       <div id="done" class="center">
-        <div class="line">That was Shur in g. The tiles stay: tap them, or let it fall again.</div>
+        <div class="line"><span id="done-name">That was Shur in g.</span> The tiles stay: tap them, or let it fall again.</div>
         <button id="again" class="primary" type="button">DROP AGAIN</button>
       </div>
       <div id="toast" class="center"></div>
@@ -611,6 +668,7 @@
         Chrome, Safari, Firefox or Edge.
       </div>
 
+      <div id="menu" role="menu" aria-label="Pieces"></div>
       <nav id="dock">
         <div id="scale" aria-label="The notes of the mode. Tap one to hear it."></div>
         <div id="chips">
@@ -618,6 +676,7 @@
             <button type="button" data-inst="setar" aria-pressed="false">SETAR</button
             ><button type="button" data-inst="santur" aria-pressed="false">SANTUR</button>
           </div>
+          <button id="piece-chip" class="chip" type="button" aria-label="Choose a piece">PIECES</button>
           <button id="speed" class="chip" type="button" aria-label="Speed">1×</button>
           <button id="cam" class="chip" type="button" aria-pressed="true">FOLLOW</button>
           <button class="chip" type="button" data-about aria-label="How it works">ABOUT</button>
@@ -643,7 +702,7 @@
         </p>
         <div class="facts">
           <div><b class="n-score">428</b><span>notes in the score</span></div>
-          <div><b class="n-hits">479</b><span>collisions, counting the ricochets</span></div>
+          <div><b class="n-hits">479</b><span>collisions, one for every stroke</span></div>
           <div><b class="n-drop">59 m</b><span>from the first tile to the last</span></div>
           <div><b>0</b><span>moments where a ball is moved by hand</span></div>
         </div>
@@ -668,21 +727,42 @@
         </p>
 
         <h3>The piece</h3>
-        <p>
-          “Shur in g” is an original piece in Dastgāh-e Shur, one of the seven modal systems of Persian classical
-          music, here built on the note G. It has four parts. The Darāmad, the opening, is free in rhythm and circles
-          the home note. The Chahārmezrāb is fast, in 6/8, over a G that keeps returning. The Owj, the peak, climbs
-          into the high octave. The Forud brings everything back down to G.
-        </p>
-        <p>
-          Shur uses two notes a piano does not have: A koron and D koron, each about a quarter tone lower than A and
-          D. Their tiles stand exactly where the pitch puts them, between their neighbours.
-        </p>
-        <p>
-          A struck or plucked string cannot be held, so long notes are played as a tremolo, called riz: the two balls
-          take turns on the same pitch. Where a phrase ends, the balls land on soft bars, bounce a few times and lie
-          still. That is the silence between phrases. Then they roll off the end and fall into the next one.
-        </p>
+        <div data-kind="original">
+          <p>
+            “Shur in g” is an original piece in Dastgāh-e Shur, one of the seven modal systems of Persian classical
+            music, here built on the note G. It has four parts. The Darāmad, the opening, is free in rhythm and
+            circles the home note. The Chahārmezrāb is fast, in 6/8, over a G that keeps returning. The Owj, the
+            peak, climbs into the high octave. The Forud brings everything back down to G.
+          </p>
+          <p>
+            Shur uses two notes a piano does not have: A koron and D koron, each about a quarter tone lower than A
+            and D. Their tiles stand exactly where the pitch puts them, between their neighbours.
+          </p>
+          <p>
+            A struck or plucked string cannot be held, so long notes are played as a tremolo, called riz: the two
+            balls take turns on the same pitch. Where a phrase ends, the balls land on soft bars, bounce a few times
+            and lie still. That is the silence between phrases. Then they roll off the end and fall into the next
+            one.
+          </p>
+        </div>
+        <div data-kind="radif">
+          <p>
+            This is a gusheh, one of the short traditional pieces of the radif, the repertoire through which Persian
+            classical music is taught and handed down. It belongs to Bayāt-e Esfahān. Its home note here is G, the
+            F sharp just below leans into it, and its E is a koron, about a quarter tone low. That mixture gives the
+            mode its bittersweet colour.
+          </p>
+          <p>
+            The notes are those of the radif of Mirzā Abdollāh (1843–1918), as written down by Dariush Talai and
+            entered note by note into the Radif Corpus. Every note of that transcription is played here, in its
+            order and its proportion. The longest notes are played as a tremolo, called riz, the way a setar or
+            santur holds a note, and a short breath separates the phrases.
+          </p>
+          <p>
+            The radif has no beat. Its notes have fixed proportions, but how fast they go is the player's choice;
+            here it is ours.
+          </p>
+        </div>
 
         <h3>How it was built</h3>
         <p>
@@ -719,8 +799,16 @@
         </p>
 
         <p class="small">
-          Composed, simulated and drawn in code by Claude (Opus 5.5 and Fable 5.2), 2026. The idea of letting gravity
-          play a piece of music comes from a “Sonata in g” posted by @imjustnewatai.
+          <span data-kind="original">Composed, simulated and drawn in code by Claude (Opus 5.5 and Fable 5.2), 2026.</span>
+          <span data-kind="radif"
+            >Simulated and drawn in code by Claude (Opus 5.5 and Fable 5.2), 2026. Notes:
+            <a href="https://doi.org/10.5281/zenodo.15742125" target="_blank" rel="noopener">Radif Corpus</a> by Maziar
+            Kanani, Seán O’Leary and James McDermott, licensed
+            <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>,
+            transcribed after Dariush Talai’s notation of the radif of Mirzā Abdollāh; set to a speed and with
+            tremolos here.</span
+          >
+          The idea of letting gravity play a piece of music comes from a “Sonata in g” posted by @imjustnewatai.
           <span id="credit-setar"
             >Setar notes: recordings by
             <a href="https://commons.wikimedia.org/wiki/User:Jacqke" target="_blank" rel="noopener">Jacqke</a> on
@@ -739,8 +827,21 @@
       </aside>
     </div>
 
-    <script src="scene.js"></script>
-    <script src="notes.js"></script>
+    <script>
+      // the pieces of the app; ?piece=… chooses one, each has its own physics run and note plan
+      window.PIECES = [
+        { id: "shur", name: "Shur in g", sub: "an original piece" },
+        { id: "esfahan-daramad", name: "Esfahan · Darāmad", sub: "from the radif" },
+        { id: "esfahan-jamehdaran", name: "Esfahan · Jāmeh-darān", sub: "from the radif" },
+        { id: "esfahan-suzogodaz", name: "Esfahan · Suz-o Godāz", sub: "from the radif" },
+      ];
+      (function () {
+        var want = new URLSearchParams(location.search).get("piece");
+        var id = window.PIECES.some(function (p) { return p.id === want; }) ? want : "shur";
+        window.PIECE_ID = id;
+        document.write('<script src="pieces/' + id + '/scene.js"><\/script><script src="pieces/' + id + '/notes.js"><\/script>');
+      })();
+    </script>
     <script type="module" src="player.js"></script>
   </body>
 </html>

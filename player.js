@@ -20,6 +20,32 @@ const START_AT = T_REL - 0.7;      // "drop" begins just before the balls are le
 const IDLE_AT = T_REL - 0.9;       // the waiting picture behind the start screen
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 
+// ---------------------------------------------------------------- this piece: titles, texts, the list of pieces
+const titleHtml = S.title.replace(/ g$/, " <i>g</i>");
+document.querySelector("#home h1").innerHTML = titleHtml;
+document.querySelector("#hud-title .t").innerHTML = titleHtml;
+document.querySelector("#about h2").innerHTML = titleHtml;
+document.querySelectorAll('.fa[lang="fa"]').forEach((el) => (el.textContent = S.fa));
+document.title = `${S.name}: Persian music played by gravity`;
+$("done-name").textContent = `That was ${S.name}.`;
+document.querySelectorAll("[data-kind]").forEach((el) => (el.style.display = el.dataset.kind === S.kind ? "" : "none"));
+function pieceLink(p, withSub) {
+  const a = document.createElement("a");
+  a.className = "piece";
+  const q = new URLSearchParams(location.search);
+  if (p.id === "shur") q.delete("piece");
+  else q.set("piece", p.id);
+  a.href = `./${q.toString() ? "?" + q.toString() : ""}`;
+  a.innerHTML = withSub ? `<span>${p.name}</span><small>${p.sub}</small>` : p.name;
+  if (p.id === window.PIECE_ID) a.setAttribute("aria-current", "true");
+  return a;
+}
+for (const p of window.PIECES) {
+  $("pieces").appendChild(pieceLink(p, false));
+  $("menu").appendChild(pieceLink(p, true));
+}
+$("piece-chip").addEventListener("click", () => $("menu").classList.toggle("open"));
+
 // ---------------------------------------------------------------- facts in the text
 const ys = S.pads.map((p) => p.c[1]);
 const drop = Math.round(Math.max(...ys) - Math.min(...ys));
@@ -223,7 +249,8 @@ function schedule() {
   if (!playing || silent || !ctx) return;
   const plan = NOTES[inst].plan;
   if (!banks[inst] || !banks[inst].buffer) return;
-  const horizon = filmNow() + 0.14 * speed;
+  // a hidden tab is only woken about once a second, so it plans further ahead
+  const horizon = filmNow() + (document.hidden ? 1.8 : 0.14) * speed;
   while (ptr < plan.length && plan[ptr][0] <= horizon) {
     const n = plan[ptr++];
     const when = cBase + (n[0] - tBase) / speed;
@@ -355,6 +382,7 @@ const spread = () => {
   return Math.hypot(a.x - b.x, a.y - b.y);
 };
 canvas.addEventListener("pointerdown", (e) => {
+  $("menu").classList.remove("open");
   try {
     canvas.setPointerCapture(e.pointerId);
   } catch (err) {
@@ -425,12 +453,13 @@ $("scale").addEventListener("click", (e) => {
 // chapters: the four parts of the piece, as one line you can touch
 const chapters = $("chapters");
 const bounds = [0, ...S.sections.slice(1).map((s) => s.t), DUR];
-const ROMAN = ["I", "II", "III", "IV"];
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI"];
+const named = new Set(S.sections.map((s) => s.en)).size > 1;       // parts with names of their own
 const chaps = S.sections.map((s, i) => {
   const el = document.createElement("div");
   el.className = "chap";
   el.style.flex = `${bounds[i + 1] - bounds[i]} 1 0`;
-  el.innerHTML = `<div class="name">${ROMAN[i]}<span class="long"> · ${s.en}</span></div><div class="line"><span></span></div>`;
+  el.innerHTML = `<div class="name">${ROMAN[i]}${named ? `<span class="long"> · ${s.en}</span>` : ""}</div><div class="line"><span></span></div>`;
   chapters.appendChild(el);
   return { el, fill: el.querySelector(".line span") };
 });
@@ -544,6 +573,7 @@ function frame(ts) {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+setInterval(schedule, 80);          // keeps the notes coming when the picture is not being drawn
 
 // installable: the page keeps working without a connection once it has been opened
 if ("serviceWorker" in navigator && location.protocol === "https:") {
