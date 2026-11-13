@@ -24,7 +24,7 @@ transcription is played in its order and length; the longest notes are played as
 - `pieces/<id>/scene.js`: the result of the physics run (tiles, trajectories, collisions, camera data)
 - `pieces/<id>/notes.js`, `snd/`: one note per slot of the instrument, and the list of notes to trigger
 - `sw.js`, `manifest.webmanifest`, `icons/`: what makes it installable
-- `fonts/`: Cormorant Garamond and Gulzar, both under the SIL Open Font License
+- `fonts/`: Cormorant Garamond and Markazi Text, both under the SIL Open Font License
 
 ## Sources and licences
 

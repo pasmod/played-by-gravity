@@ -52,8 +52,9 @@
         font-display: swap;
       }
       @font-face {
-        font-family: "Gulzar";
-        src: url("fonts/Gulzar.woff2") format("woff2");
+        font-family: "Markazi Text";
+        src: url("fonts/MarkaziText.woff2") format("woff2");
+        font-weight: 400 700;
         font-display: swap;
       }
       :root {
@@ -65,7 +66,7 @@
         --accent: #2ec4d6;
         --pad: clamp(14px, 4vw, 56px);
         --font-display: "Cormorant", "Iowan Old Style", Georgia, serif;
-        --font-fa: "Gulzar", "Noto Nastaliq Urdu", serif;
+        --font-fa: "Markazi Text", "Noto Naskh Arabic", serif;
       }
       html[data-look="negar"] {
         --ground: #eee3ca;
@@ -385,14 +386,14 @@
         padding-left: 0.2em;
       }
       #home .fa {
-        margin-top: 0.55em;
+        margin-top: 0.6em;
         font-family: var(--font-fa);
         font-weight: 400;
-        font-size: clamp(22px, 2.7vw, 48px);
-        line-height: 2;          /* nastaliq hangs below its line and needs the room */
+        font-size: clamp(25px, 3.1vw, 56px);      /* Markazi Text is small on its body */
+        line-height: 1.3;
       }
       #home .line {
-        margin-top: 0.5em;
+        margin-top: 0.7em;
         font-size: clamp(16px, 1.9vw, 34px);
         font-style: italic;
         color: var(--dim);
@@ -561,8 +562,8 @@
         font-family: var(--font-fa);
         font-weight: 400;
         font-style: normal;
-        font-size: 1.1em;
-        line-height: 2.1;
+        font-size: 1.25em;
+        line-height: 1.4;
       }
       #about h3 {
         margin: 2.2em 0 0.6em;
@@ -772,7 +773,7 @@
           transcribed after Dariush Talai’s notation of the radif of Mirzā Abdollāh; set to a speed and with
           tremolos here. The idea of letting gravity play a piece of music comes from a “Sonata in g” posted by
           @imjustnewatai.
-          Typefaces: Cormorant Garamond and Gulzar, SIL Open Font License.
+          Typefaces: Cormorant Garamond and Markazi Text, SIL Open Font License.
         </p>
       </aside>
     </div>
@@ -792,7 +793,7 @@
         var id = window.PIECES.some(function (p) { return p.id === want; }) ? want : window.PIECES[0].id;
         window.PIECE_ID = id;
         // BUILD changes with every published version, so that no browser keeps an older script
-        window.BUILD = "2026-11-13.7";
+        window.BUILD = "2026-11-13.8";
         var v = "?v=" + window.BUILD;
         document.write('<script src="pieces/' + id + '/scene.js' + v + '"><\/script><script src="pieces/' + id + '/notes.js' + v + '"><\/script>');
         document.write('<script type="module" src="player.js' + v + '"><\/script>');
