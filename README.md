@@ -4,12 +4,12 @@
 balls are dropped; every tile they land on is a note. Nothing about the balls is animated: a physics
 simulation carries them, and the app draws it live and triggers each note at its collision.
 
-**Open the app: https://pasmod.github.io/shur-in-g/**
+**Open the app: https://pasmod.github.io/played-by-gravity/**
 
 Drop the balls and watch; the camera finds its own way. Tap a tile to play it, slow the fall down, jump to any
 place in the piece. On a phone it can be added to the home screen and then works without a connection.
 
-The page began as "Shur in g", an original piece in Dastgāh-e Shur, and keeps that address.
+The page began as "Shur in g", an original piece in Dastgāh-e Shur.
 
 ## The piece
 

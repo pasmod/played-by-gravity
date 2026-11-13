@@ -1,7 +1,7 @@
-// Shur in g — keeps the app working without a connection once it has been opened.
+// Played by gravity — keeps the app working without a connection once it has been opened.
 // The page and its code are fetched fresh whenever there is a connection (cache as fallback);
 // sounds, fonts and the 3D library are answered from the cache.
-const V = "shur-in-g-v8";
+const V = "played-by-gravity-v1";
 const CORE = [
   "./", "index.html", "app.js", "player.js", "manifest.webmanifest",
   "pieces/chahargah-zang/scene.js", "pieces/chahargah-zang/notes.js",
