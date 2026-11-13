@@ -253,38 +253,26 @@ if (THEME === "negar") {
   scene.add(outline);
 }
 
-// inlay (gonbad): an eight-pointed star on every tile; it lights when the tile is struck
-function starTexture() {
+// inlay (gonbad): a plain, soft light in the face of every tile; it lights when the tile is struck.
+// (It was a star in a frame once; close to the camera that read as a little carpet.)
+function glowTexture() {
   const c = document.createElement("canvas");
   c.width = 128;
   c.height = 256;
   const g = c.getContext("2d");
-  g.strokeStyle = "#fff";
-  g.lineJoin = "round";
-  g.lineWidth = 5;
-  g.strokeRect(11, 11, 106, 234);
-  const star = (cx, cy, r, lw) => {
-    g.lineWidth = lw;
-    for (let k = 0; k < 2; k++) {
-      g.beginPath();
-      for (let i = 0; i < 4; i++) {
-        const a = (Math.PI / 2) * i + (k * Math.PI) / 4;
-        const x = cx + r * Math.cos(a);
-        const y = cy + r * Math.sin(a);
-        if (i === 0) g.moveTo(x, y);
-        else g.lineTo(x, y);
-      }
-      g.closePath();
-      g.stroke();
-    }
+  const pill = (m, r) => {
+    const [x0, y0, x1, y1] = [m, m, c.width - m, c.height - m];
+    g.beginPath();
+    g.moveTo(x0 + r, y0);
+    g.arcTo(x1, y0, x1, y1, r);
+    g.arcTo(x1, y1, x0, y1, r);
+    g.arcTo(x0, y1, x0, y0, r);
+    g.arcTo(x0, y0, x1, y0, r);
+    g.closePath();
+    g.fill();
   };
-  g.fillStyle = "rgba(255,255,255,0.22)";
-  g.beginPath();
-  g.arc(64, 128, 26, 0, Math.PI * 2);
-  g.fill();
-  star(64, 128, 38, 5);
-  star(64, 44, 13, 4);
-  star(64, 212, 13, 4);
+  g.fillStyle = "rgba(255,255,255,0.025)";
+  for (let k = 0; k < 12; k++) pill(4 + k * 4, Math.max(4, 16 - k));      // brightest in the middle, soft to the rim
   const t = new THREE.CanvasTexture(c);
   t.anisotropy = 8;
   return t;
@@ -294,7 +282,7 @@ if (THEME === "gonbad") {
   const g = new THREE.PlaneGeometry(PW * 0.94, PL * 0.96).rotateX(-Math.PI / 2);
   inlay = new THREE.InstancedMesh(
     g,
-    new THREE.MeshBasicMaterial({ map: starTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }),
+    new THREE.MeshBasicMaterial({ map: glowTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }),
     NH,
   );
   inlay.frustumCulled = false;
