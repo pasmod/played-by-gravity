@@ -788,9 +788,12 @@
         var want = new URLSearchParams(location.search).get("piece");
         var id = window.PIECES.some(function (p) { return p.id === want; }) ? want : window.PIECES[0].id;
         window.PIECE_ID = id;
-        document.write('<script src="pieces/' + id + '/scene.js"><\/script><script src="pieces/' + id + '/notes.js"><\/script>');
+        // BUILD changes with every published version, so that no browser keeps an older script
+        window.BUILD = "2026-11-13.5";
+        var v = "?v=" + window.BUILD;
+        document.write('<script src="pieces/' + id + '/scene.js' + v + '"><\/script><script src="pieces/' + id + '/notes.js' + v + '"><\/script>');
+        document.write('<script type="module" src="player.js' + v + '"><\/script>');
       })();
     </script>
-    <script type="module" src="player.js"></script>
   </body>
 </html>

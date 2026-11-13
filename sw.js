@@ -1,7 +1,7 @@
 // Shur in g — keeps the app working without a connection once it has been opened.
 // The page and its code are fetched fresh whenever there is a connection (cache as fallback);
 // sounds, fonts and the 3D library are answered from the cache.
-const V = "shur-in-g-v7";
+const V = "shur-in-g-v8";
 const CORE = [
   "./", "index.html", "app.js", "player.js", "manifest.webmanifest",
   "pieces/chahargah-zang/scene.js", "pieces/chahargah-zang/notes.js",
@@ -37,7 +37,8 @@ self.addEventListener("fetch", (e) => {
       const hit = await c.match(req, { ignoreSearch: own });
       if (hit && !fresh) return hit;
       try {
-        const r = await fetch(req);
+        // the page and its code are asked for anew each time, past the browser's own short-term store
+        const r = await fetch(req, fresh ? { cache: "no-cache" } : undefined);
         if (r.ok) c.put(req, r.clone());
         return r;
       } catch (err) {

@@ -5,7 +5,7 @@ const $ = (id) => document.getElementById(id);
 
 let app;
 try {
-  app = await import("./app.js");
+  app = await import(`./app.js?v=${window.BUILD || ""}`);
 } catch (err) {
   $("fail").style.display = "grid";
   $("home").style.display = "none";
