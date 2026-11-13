@@ -1,7 +1,7 @@
 {
   "name": "Zang-e Shotor, played by gravity",
   "short_name": "Zang-e Shotor",
-  "description": "Zang-e Shotor, the camel’s bell, played on a santur by nothing but falling. Drop the balls and tap the tiles.",
+  "description": "Zang-e Shotor, the camel’s bell, played on a santur by nothing but falling. Press play and tap the tiles.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

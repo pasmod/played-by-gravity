@@ -16,7 +16,7 @@ document.documentElement.dataset.look = THEME;
 
 const NOTES = window.NOTES || {};
 const DUR = S.t_end;
-const START_AT = T_REL - 0.7;      // "drop" begins just before the balls are let go
+const START_AT = T_REL - 0.7;      // "play" begins just before the balls are let go
 const IDLE_AT = T_REL - 0.9;       // the waiting picture behind the start screen
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 

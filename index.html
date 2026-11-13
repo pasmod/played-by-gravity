@@ -52,9 +52,8 @@
         font-display: swap;
       }
       @font-face {
-        font-family: "Vazirmatn";
-        src: url("fonts/Vazirmatn.woff2") format("woff2");
-        font-weight: 100 900;
+        font-family: "Gulzar";
+        src: url("fonts/Gulzar.woff2") format("woff2");
         font-display: swap;
       }
       :root {
@@ -66,7 +65,7 @@
         --accent: #2ec4d6;
         --pad: clamp(14px, 4vw, 56px);
         --font-display: "Cormorant", "Iowan Old Style", Georgia, serif;
-        --font-fa: "Vazirmatn", Tahoma, sans-serif;
+        --font-fa: "Gulzar", "Noto Nastaliq Urdu", serif;
       }
       html[data-look="negar"] {
         --ground: #eee3ca;
@@ -144,6 +143,9 @@
         gap: 12px;
         pointer-events: none;
         transition: opacity 0.5s;
+      }
+      body:not(.started) #top {
+        opacity: 0;              /* the start screen shows the title once, not twice */
       }
       #hud-title .t {
         font-size: clamp(17px, 1.9vw, 34px);
@@ -383,13 +385,14 @@
         padding-left: 0.2em;
       }
       #home .fa {
-        margin-top: 0.9em;
+        margin-top: 0.55em;
         font-family: var(--font-fa);
-        font-weight: 200;
-        font-size: clamp(18px, 2.3vw, 42px);
+        font-weight: 400;
+        font-size: clamp(22px, 2.7vw, 48px);
+        line-height: 2;          /* nastaliq hangs below its line and needs the room */
       }
       #home .line {
-        margin-top: 1em;
+        margin-top: 0.5em;
         font-size: clamp(16px, 1.9vw, 34px);
         font-style: italic;
         color: var(--dim);
@@ -556,9 +559,10 @@
         display: block;
         margin-top: 0.3em;
         font-family: var(--font-fa);
-        font-weight: 300;
+        font-weight: 400;
         font-style: normal;
-        font-size: 0.92em;
+        font-size: 1.1em;
+        line-height: 2.1;
       }
       #about h3 {
         margin: 2.2em 0 0.6em;
@@ -647,14 +651,13 @@
         <h1>ZANG-E SHOTOR</h1>
         <div class="fa" dir="rtl" lang="fa">زنگ شتر، چهارگاه</div>
         <div class="line">Two balls, a long fall, and every landing is a note.</div>
-        <button id="drop" class="primary" type="button">DROP THE BALLS</button>
+        <button id="drop" class="primary" type="button">PLAY THE MUSIC</button>
         <div id="pieces" class="row wrap" role="group" aria-label="Piece"></div>
-        <button class="link" type="button" data-about>HOW IT WORKS</button>
       </section>
 
       <div id="done" class="center">
-        <div class="line"><span id="done-name">That was the piece.</span> The tiles stay: tap them, or let it fall again.</div>
-        <button id="again" class="primary" type="button">DROP AGAIN</button>
+        <div class="line"><span id="done-name">That was the piece.</span> The tiles stay: tap them, or play it again.</div>
+        <button id="again" class="primary" type="button">PLAY AGAIN</button>
       </div>
       <div id="toast" class="center"></div>
       <div id="fail">
@@ -698,7 +701,7 @@
 
         <h3>What you can do</h3>
         <p>
-          Drop the balls and watch; the camera finds its own way. Tap any tile, or a note name at the bottom, to
+          Press play and watch; the camera finds its own way. Tap any tile, or a note name at the bottom, to
           play it yourself. You can slow the fall down without the notes going out of tune, and jump to any place
           in the piece. On a phone you can add this page to your home screen; it then opens like an app and also
           works without a connection.
@@ -769,7 +772,7 @@
           transcribed after Dariush Talai’s notation of the radif of Mirzā Abdollāh; set to a speed and with
           tremolos here. The idea of letting gravity play a piece of music comes from a “Sonata in g” posted by
           @imjustnewatai.
-          Typefaces: Cormorant Garamond and Vazirmatn, SIL Open Font License.
+          Typefaces: Cormorant Garamond and Gulzar, SIL Open Font License.
         </p>
       </aside>
     </div>
@@ -789,7 +792,7 @@
         var id = window.PIECES.some(function (p) { return p.id === want; }) ? want : window.PIECES[0].id;
         window.PIECE_ID = id;
         // BUILD changes with every published version, so that no browser keeps an older script
-        window.BUILD = "2026-11-13.6";
+        window.BUILD = "2026-11-13.7";
         var v = "?v=" + window.BUILD;
         document.write('<script src="pieces/' + id + '/scene.js' + v + '"><\/script><script src="pieces/' + id + '/notes.js' + v + '"><\/script>');
         document.write('<script type="module" src="player.js' + v + '"><\/script>');

@@ -1,12 +1,12 @@
 // Played by gravity — keeps the app working without a connection once it has been opened.
 // The page and its code are fetched fresh whenever there is a connection (cache as fallback);
 // sounds, fonts and the 3D library are answered from the cache.
-const V = "played-by-gravity-v1";
+const V = "played-by-gravity-v2";
 const CORE = [
   "./", "index.html", "app.js", "player.js", "manifest.webmanifest",
   "pieces/chahargah-zang/scene.js", "pieces/chahargah-zang/notes.js",
   "snd/santur.m4a",
-  "fonts/Cormorant.woff2", "fonts/Cormorant-Italic.woff2", "fonts/Vazirmatn.woff2",
+  "fonts/Cormorant.woff2", "fonts/Cormorant-Italic.woff2", "fonts/Gulzar.woff2",
   "icons/icon.svg", "icons/icon-192.png",
 ];
 self.addEventListener("install", (e) => {
