@@ -18,8 +18,8 @@ let W = 1920;
 let H = 1080;
 let PR = 1;
 export const quality = { maxPR: 2 };
-// The visitor's camera. While `free` is false the camera keeps its course and az/el are a turn on
-// top of it; once the visitor takes over (`free`), az/el are the angles themselves. zoom < 1 is closer.
+// The camera keeps its own course; the visitor does not steer it. `sway` is the slow turn behind the
+// start screen; az, el and zoom are a turn on top of the course and stay at rest (zoom < 1 is closer).
 export const view = { az: 0, el: 0, zoom: 1, free: false, sway: 0 };
 export function rigAt(t) {
   const [az, el] = spline(RIGS[THEME], t);
@@ -34,7 +34,7 @@ export const T_REL = Math.min(S.ramps[0].t_release, S.ramps[1].t_release);
 const LOOKS = {
   gonbad: {
     dark: true, bg: 0x02040c, fog: 0x040816, fogK: 0.085, fov: 36, exposure: 1.02,
-    bloom: [0.55, 0.55, 0.78], grain: 0.028, vig: 0.4, paper: 0,
+    bloom: [0.7, 0.55, 0.78], grain: 0.028, vig: 0.4, paper: 0,
     pc: { G: "#2ec4d6", Ak: "#46d6a0", Bb: "#b6d65a", C: "#f6c453", Dk: "#f7a548", D: "#f27d4f", Eb: "#e85a6b", F: "#c66ad0" },
     balls: ["#ffd9a0", "#cfe4ff"],
   },
@@ -93,7 +93,10 @@ function camAt(t) {
   const i = Math.floor(f);
   const a = f - i;
   const mix = (arr) => arr[i] * (1 - a) + arr[i + 1] * a;
-  return { x: mix(cam.x), y: mix(cam.y), z: mix(cam.z), span: mix(cam.span) };
+  // span: the scale of the scene around the balls; sy and sx: the room the two balls need at this
+  // moment in height and sideways (metres, margins included)
+  const span = mix(cam.span);
+  return { x: mix(cam.x), y: mix(cam.y), z: mix(cam.z), span, sy: cam.sy ? mix(cam.sy) : span, sx: cam.sx ? mix(cam.sx) : span };
 }
 function rng(seed) {
   return () => {
@@ -636,9 +639,11 @@ composer.addPass(grade);
 // ---------------------------------------------------------------- camera
 const END = new THREE.Vector3();
 ballAt(0, T_LAST, END);
+let room = { sy: 1, sx: 1 };
 function target(t, out) {
   const c = camAt(t);
   out.set(c.x, c.y, c.z);
+  room = c;
   return c.span;
 }
 // keyframes: t, azimuth (deg, 0 = behind the balls), elevation (deg), frame height (in spans), look-ahead (spans)
@@ -651,9 +656,10 @@ const RIGS = {
   gonbad: [
     [0, 38, 12, 3.1, 0, 1.3], [T_REL - 0.4, 34, 13, 2.9, 0, 1.15], [T_FIRST + 0.6, 26, 18, 1.71, 0.1, 0.1],
     [at(0.045), 18, 23, 1.57, 0.3, 0], [at(0.17), -20, 24, 1.62, 0.35, 0],
-    [at(0.33), -68, 15, 1.57, 0.2, 0], [at(0.45), -134, 17, 1.62, 0.3, 0], [at(0.565), -180, 19, 1.67, 0.4, 0.1],
-    [at(0.645), -214, 17, 1.62, 0.35, 0], [at(0.74), -296, 24, 1.75, 0.35, 0], [at(0.82), -350, 30, 1.84, 0.4, 0],
-    [at(0.92), -386, 22, 1.62, 0.3, 0], [T_LAST, -400, 17, 1.44, 0.2, 0],
+    [at(0.26), -48, 17, 1.3, 0.2, 0], [at(0.33), -68, 15, 1.57, 0.2, 0], [at(0.45), -134, 17, 1.62, 0.3, 0],
+    [at(0.52), -160, 18, 1.3, 0.3, 0], [at(0.565), -180, 19, 1.67, 0.4, 0.1],
+    [at(0.645), -214, 17, 1.62, 0.35, 0], [at(0.7), -262, 20, 1.3, 0.3, 0], [at(0.74), -296, 24, 1.75, 0.35, 0],
+    [at(0.82), -350, 30, 1.84, 0.4, 0], [at(0.92), -386, 22, 1.62, 0.3, 0], [T_LAST, -400, 17, 1.3, 0.2, 0],
   ],
   negar: [[0, -62, 20, 1.45, 0, 0], [S.t_end, -62, 20, 1.45, 0, 0]],
   divar: [[0, 34, 38, 1.55, 0.25, 0], [at(0.4), 24, 42, 1.6, 0.3, 0], [at(0.7), 14, 46, 1.7, 0.3, 0], [S.t_end, 30, 38, 1.55, 0.25, 0]],
@@ -670,8 +676,21 @@ const fS = upSlope.clone().multiplyScalar(-1);
 const rS = new THREE.Vector3(1, 0, 0);
 const uS = new THREE.Vector3().crossVectors(fS, rS).normalize();
 if (uS.y < 0) uS.multiplyScalar(-1);
+// While the piece plays the camera stays close: the scene says for every moment how much room the two
+// balls need (sy in height, sx sideways, margins included). CLOSE turns the frame heights of the
+// keyframes into a share of that room (1.3 in a keyframe becomes just the room needed), WIDE is the
+// same for the width, and AHEAD is how much of the look-ahead of the keyframes is kept.
+// The fall is steep: a ball that is lower is also further down the cascade. In the frame of the slope
+// its height is partly "standing on the slope" (COS_T) and partly "down the cascade" (SIN_T).
+const COS_T = 1 / Math.hypot(1, S.cam.slope);
+const SIN_T = Math.abs(S.cam.slope) * COS_T;
+const CLOSE = 0.68;
+const WIDE = 0.65;
+const AHEAD = 0.15;
+const SWING = 25;
 function follow(t, pos, look) {
   const span = target(t, T0v);
+  const { sy, sx } = room;
   target(t + 1.2, T1v);
   dir.copy(T1v).sub(T0v).normalize();
   let [azD, elD, fh, la, lift] = spline(RIGS[THEME], t);
@@ -685,17 +704,63 @@ function follow(t, pos, look) {
     azD += view.az + view.sway;
     elD += view.el;
   }
+  // a tall screen has no room for the cascade seen from the side: there the camera stays behind the
+  // balls and only swings a little to the left and right
+  const tallScreen = smooth01((1.2 - camera.aspect) / 0.5) * smooth01((t - T_FIRST) / 2.5);
+  azD += (SWING * Math.sin((azD * Math.PI) / 180) - azD) * tallScreen;
   const az = (azD * Math.PI) / 180;
   const el = (Math.min(86, Math.max(-30, elD)) * Math.PI) / 180;
-  const fit = Math.max(1, 0.85 / camera.aspect);      // tall screens: step back so the width still fits
-  const D = (view.zoom * fit * fh * span) / (2 * Math.tan((L.fov * Math.PI) / 360));
+  // the frame at the balls: tall enough for their arcs, and wide enough for both of them side by side.
+  // A tall screen no longer steps back by rule; it steps back only when the balls really stand far apart.
+  const playing = smooth01((t - T_FIRST) / 2.5);
+  fh *= 1 - (1 - CLOSE) * playing;
+  la *= 1 - (1 - AHEAD) * playing;
+  // what that room measures in the picture, for this direction of view
+  const U = sy * COS_T;
+  const F = sy * SIN_T;
+  const ca = Math.abs(Math.cos(az));
+  const sa = Math.abs(Math.sin(az));
+  const tall = U * Math.cos(el) + (F * ca + sx * sa) * Math.abs(Math.sin(el));
+  const wide = sx * ca + F * sa;
+  // a close camera sees the nearer ball larger: the depth of the room, seen at half the angle of the
+  // lens, is added so that the nearer ball stays in the picture too
+  const deep = (F * ca + sx * sa) * Math.cos(el) + U * Math.abs(Math.sin(el));
+  const frame = Math.max(fh * tall, (WIDE * wide) / camera.aspect) + deep * Math.tan((L.fov * Math.PI) / 360) * playing;
+  const eff = frame / fh;
+  const D = (view.zoom * frame) / (2 * Math.tan((L.fov * Math.PI) / 360));
   pos.copy(T0v)
     .addScaledVector(rS, D * Math.sin(az) * Math.cos(el))
     .addScaledVector(uS, D * Math.sin(el))
     .addScaledVector(fS, -D * Math.cos(az) * Math.cos(el));
-  look.copy(T0v).addScaledVector(dir, la * span * Math.cos(az));
-  look.y += lift * span;
+  look.copy(T0v).addScaledVector(dir, la * eff * Math.cos(az));
+  look.y += lift * eff;
   return span;
+}
+const probe = new THREE.Vector3();
+export function frameCheck(t, detail) {
+  renderCamera(t);
+  camera.updateMatrixWorld();
+  let m = 0;
+  const at = [];
+  for (const b of [0, 1]) {
+    ballAt(b, t, probe);
+    probe.project(camera);
+    at.push(+probe.x.toFixed(2), +probe.y.toFixed(2));
+    m = Math.max(m, Math.abs(probe.x), Math.abs(probe.y));
+  }
+  if (!detail) return m;
+  // for the builder of the camera: where the balls and the look point stand around the middle of the
+  // room, in the frame of the slope (r sideways, u standing on it, f down the cascade), in metres
+  const c = camAt(t);
+  const mid = new THREE.Vector3(c.x, c.y, c.z);
+  const rel = (v) => {
+    const d = v.clone().sub(mid);
+    return [+d.dot(rS).toFixed(2), +d.dot(uS).toFixed(2), +d.dot(fS).toFixed(2)];
+  };
+  const b0 = ballAt(0, t, new THREE.Vector3()).clone();
+  const b1 = ballAt(1, t, new THREE.Vector3()).clone();
+  return { m, at, sy: +c.sy.toFixed(2), sx: +c.sx.toFixed(2), b0: rel(b0), b1: rel(b1), look: rel(camLook), cam: rel(camPos),
+    dist: +camPos.distanceTo(camLook).toFixed(2), frame: +(2 * camPos.distanceTo(camLook) * Math.tan((L.fov * Math.PI) / 360)).toFixed(2) };
 }
 let reveal = 0;
 function renderCamera(t) {

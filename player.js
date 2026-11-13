@@ -11,7 +11,7 @@ try {
   $("home").style.display = "none";
   throw err;
 }
-const { renderAt, resize, view, rigAt, pick, S, T_LAST, T_REL, THEME, quality } = app;
+const { renderAt, resize, view, pick, S, T_LAST, T_REL, THEME, quality } = app;
 document.documentElement.dataset.look = THEME;
 
 const NOTES = window.NOTES || {};
@@ -164,6 +164,7 @@ async function ready(name) {
 const live = new Set();
 let strings = {};
 const stat = { struck: 0 };          // for checks from the console: how many notes have been triggered
+window.shurFrame = app.frameCheck;
 window.shurStat = () => ({ ...stat, audio: ctx ? ctx.state : "none", instrument: inst, speed, offset: banks[inst] ? banks[inst].calib : null });
 function hush(node, when) {
   const t = Math.max(when, ctx.currentTime);
@@ -336,12 +337,11 @@ async function begin(from) {
   if (!started) {
     started = true;
     body.classList.add("started");
-    say(silent ? "The sound could not be loaded. Drag to look around." : "Drag to look around. Tap a tile to play it.");
+    say(silent ? "The sound could not be loaded." : "Tap a tile to play it.");
   }
 }
 dropBtn.addEventListener("click", () => begin(START_AT));
 $("again").addEventListener("click", () => {
-  follow();
   begin(START_AT);
 });
 const togglePath = $("toggle-path");
@@ -359,96 +359,23 @@ speedBtn.addEventListener("click", () => {
   speedBtn.setAttribute("aria-pressed", String(speed !== 1));
 });
 
-// camera: it follows the balls on its own course until the visitor takes over
-const camBtn = $("cam");
-function showCam() {
-  camBtn.textContent = view.free ? "FREE VIEW" : "FOLLOW";
-  camBtn.setAttribute("aria-pressed", String(!view.free));
-}
-function takeOver() {
-  if (view.free) return;
-  const r = rigAt(seen());
-  view.az = r.az + view.az + view.sway;
-  view.el = clamp(r.el + view.el, -25, 84);
-  view.sway = 0;
-  view.free = true;
-  showCam();
-}
-function follow() {
-  view.free = false;
-  view.az = 0;
-  view.el = 0;
-  view.zoom = 1;
-  showCam();
-}
-camBtn.addEventListener("click", () => (view.free ? follow() : takeOver()));
-
-// gestures on the picture: drag to turn, pinch or wheel to come closer, tap a tile to play it
-const fingers = new Map();
+// the picture: the camera keeps its own course; a tap on a tile plays it
 let downAt = 0;
-let moved = 0;
-let last = null;
-let pinch0 = 0;
-let zoom0 = 1;
-const spread = () => {
-  const [a, b] = [...fingers.values()];
-  return Math.hypot(a.x - b.x, a.y - b.y);
-};
+let downXY = null;
 canvas.addEventListener("pointerdown", (e) => {
   $("menu").classList.remove("open");
-  try {
-    canvas.setPointerCapture(e.pointerId);
-  } catch (err) {
-    /* a synthetic pointer cannot be captured */
-  }
-  fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (fingers.size === 1) {
-    downAt = performance.now();
-    moved = 0;
-    last = { x: e.clientX, y: e.clientY };
-  } else if (fingers.size === 2) {
-    pinch0 = spread();
-    zoom0 = view.zoom;
-    moved = 99;
-  }
+  downAt = performance.now();
+  downXY = { x: e.clientX, y: e.clientY };
 });
-canvas.addEventListener("pointermove", (e) => {
-  if (!fingers.has(e.pointerId)) return;
-  fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (fingers.size === 2) {
-    view.zoom = clamp((zoom0 * pinch0) / Math.max(20, spread()), 0.3, 3);
-  } else if (last) {
-    const dx = e.clientX - last.x;
-    const dy = e.clientY - last.y;
-    moved += Math.abs(dx) + Math.abs(dy);
-    if (moved > 8) {
-      takeOver();
-      view.az -= dx * 0.25;
-      view.el = clamp(view.el + dy * 0.2, -25, 84);
-    }
-    last = { x: e.clientX, y: e.clientY };
-  }
-});
-function lift(e) {
-  if (!fingers.has(e.pointerId)) return;
-  const tap = e.type === "pointerup" && fingers.size === 1 && moved <= 8 && performance.now() - downAt < 450;
-  fingers.delete(e.pointerId);
-  last = null;
+canvas.addEventListener("pointerup", (e) => {
+  const tap = downXY && Math.abs(e.clientX - downXY.x) + Math.abs(e.clientY - downXY.y) <= 8 && performance.now() - downAt < 450;
+  downXY = null;
   if (tap) {
     const hit = pick(e.clientX, e.clientY);
     if (hit) touchNote(hit.lane);
   }
-}
-canvas.addEventListener("pointerup", lift);
-canvas.addEventListener("pointercancel", lift);
-canvas.addEventListener(
-  "wheel",
-  (e) => {
-    e.preventDefault();
-    view.zoom = clamp(view.zoom * Math.exp(e.deltaY * 0.0012), 0.3, 3);
-  },
-  { passive: false },
-);
+});
+canvas.addEventListener("pointercancel", () => (downXY = null));
 
 // the note names at the bottom are keys too
 const laneOf = {};
@@ -527,8 +454,6 @@ window.addEventListener("keydown", (e) => {
     const t = clamp(filmNow() + (e.code === "ArrowRight" ? 5 : -5), 0, DUR);
     if (playing) begin(t);
     else tPaused = t;
-  } else if (e.code === "KeyF") {
-    follow();
   }
 });
 

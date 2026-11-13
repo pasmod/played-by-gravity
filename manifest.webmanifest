@@ -1,7 +1,7 @@
 {
-  "name": "Santur, played by gravity",
-  "short_name": "Santur",
-  "description": "Persian classical music, played on a santur by nothing but falling. Drop the balls, tap the tiles, look around.",
+  "name": "Zang-e Shotor, played by gravity",
+  "short_name": "Zang-e Shotor",
+  "description": "Zang-e Shotor, the camel’s bell, played on a santur by nothing but falling. Drop the balls and tap the tiles.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

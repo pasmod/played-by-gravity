@@ -3,15 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <title>Santur, played by gravity</title>
+    <title>Zang-e Shotor, played by gravity</title>
     <meta
       name="description"
-      content="Drop two balls and let gravity play Persian classical music on a santur. Three pieces to choose from. Tap the tiles, look around, slow it down."
+      content="Drop two balls and let gravity play Zang-e Shotor, the camel’s bell, a piece of Persian classical music, on a santur. Tap the tiles, slow it down."
     />
-    <meta property="og:title" content="Santur, played by gravity" />
+    <meta property="og:title" content="Zang-e Shotor, played by gravity" />
     <meta
       property="og:description"
-      content="Persian classical music, played on a santur by nothing but falling. Drop the balls, tap the tiles, look around."
+      content="Zang-e Shotor, the camel’s bell, played on a santur by nothing but falling. Drop the balls and tap the tiles."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://pasmod.github.io/shur-in-g/" />
@@ -23,7 +23,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Santur" />
+    <meta name="apple-mobile-web-app-title" content="Zang-e Shotor" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon-180.png" />
@@ -627,7 +627,7 @@
   </head>
   <body>
     <div id="app">
-      <canvas id="stage" aria-label="The fall: tiles and two balls. Drag to look around, tap a tile to play it."></canvas>
+      <canvas id="stage" aria-label="The fall: tiles and two balls. Tap a tile to play it."></canvas>
 
       <header id="top">
         <div id="hud-title">
@@ -644,8 +644,8 @@
       </header>
 
       <section id="home" class="center">
-        <h1>CHAHARMEZRAB</h1>
-        <div class="fa" dir="rtl" lang="fa">چهارمضراب ماهور</div>
+        <h1>ZANG-E SHOTOR</h1>
+        <div class="fa" dir="rtl" lang="fa">زنگ شتر، چهارگاه</div>
         <div class="line">Two balls, a long fall, and every landing is a note.</div>
         <button id="drop" class="primary" type="button">DROP THE BALLS</button>
         <div id="pieces" class="row wrap" role="group" aria-label="Piece"></div>
@@ -668,7 +668,6 @@
         <div id="chips">
           <button id="piece-chip" class="chip" type="button" aria-label="Choose a piece">PIECES</button>
           <button id="speed" class="chip" type="button" aria-label="Speed">1×</button>
-          <button id="cam" class="chip" type="button" aria-pressed="true">FOLLOW</button>
           <button class="chip" type="button" data-about aria-label="How it works">ABOUT</button>
         </div>
         <div id="transport">
@@ -685,10 +684,10 @@
             <path d="M1 0L5 4 9 0l1 1-4 4 4 4-1 1-4-4-4 4-1-1 4-4-4-4z" />
           </svg>
         </button>
-        <h2>CHAHARMEZRAB</h2>
+        <h2>ZANG-E SHOTOR</h2>
         <p class="sub">
           Persian classical music, played on a santur by nothing but falling.
-          <span class="fa" dir="rtl" lang="fa">چهارمضراب ماهور</span>
+          <span class="fa" dir="rtl" lang="fa">زنگ شتر، چهارگاه</span>
         </p>
         <div class="facts">
           <div><b class="n-score">428</b><span>notes in the score</span></div>
@@ -699,11 +698,10 @@
 
         <h3>What you can do</h3>
         <p>
-          Drop the balls and watch, or take over: drag to look around, pinch or scroll to come closer, and tap any
-          tile, or a note name at the bottom, to play it yourself. You can slow the fall down without the notes
-          going out of tune, and jump to any place in the piece. There are three pieces to choose from. On a phone
-          you can add this page to your home screen; it then opens like an app and also works without a
-          connection.
+          Drop the balls and watch; the camera finds its own way. Tap any tile, or a note name at the bottom, to
+          play it yourself. You can slow the fall down without the notes going out of tune, and jump to any place
+          in the piece. On a phone you can add this page to your home screen; it then opens like an app and also
+          works without a connection.
         </p>
 
         <h3>What you are watching</h3>
@@ -780,22 +778,10 @@
       // the pieces of the app; ?piece=… chooses one, each has its own physics run and note plan
       window.PIECES = [
         {
-          id: "mahur-chaharmezrab",
-          name: "Chahārmezrāb",
-          sub: "Māhur · bright and fast",
-          text: "A chahārmezrāb, “four strokes”, is the showpiece form of Persian music: a fast, steady pulse in which a low drone string keeps returning under the melody. This one is in Māhur, the brightest of the modes, close to a major scale. Watch how one ball keeps coming back to the low string while the other carries the tune, like the two hammers of a santur player.",
-        },
-        {
           id: "chahargah-zang",
           name: "Zang-e Shotor",
           sub: "Chahārgāh · the camel’s bell",
           text: "Zang-e Shotor means “the camel’s bell”: a long ringing note, a low stroke, another long note, in the swaying step of a caravan. It is in Chahārgāh, a mode with two koron notes, which give it its far-away colour.",
-        },
-        {
-          id: "mahur-kereshmeh",
-          name: "Kereshmeh",
-          sub: "Māhur · a lilting rhythm",
-          text: "Kereshmeh means a coquettish glance. It is less a melody of its own than a rhythm, short and long notes in a lilting turn, that can be played through any mode; here through Māhur, close to a major scale.",
         },
       ];
       (function () {
